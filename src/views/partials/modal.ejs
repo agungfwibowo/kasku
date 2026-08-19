@@ -1,0 +1,62 @@
+<div id="customModalOverlay" class="modal-overlay">
+  <div class="modal-box">
+    <div class="modal-icon" id="modalIcon"></div>
+    <p class="modal-message" id="modalMessage"></p>
+    <div class="modal-actions" id="modalActions"></div>
+  </div>
+</div>
+<script>
+  function lucideIconHTML(name) {
+    return '<i data-lucide="' + name + '"></i>';
+  }
+
+  function showCustomModal(message, icon, buttons, iconColor) {
+    return new Promise(function (resolve) {
+      const overlay = document.getElementById('customModalOverlay');
+      const modalIcon = document.getElementById('modalIcon');
+      modalIcon.innerHTML = lucideIconHTML(icon);
+      modalIcon.style.color = iconColor || '#2952e3';
+      document.getElementById('modalMessage').textContent = message;
+      const actions = document.getElementById('modalActions');
+      actions.innerHTML = '';
+      buttons.forEach(function (btn) {
+        const el = document.createElement('button');
+        el.type = 'button';
+        if (btn.icon) {
+          el.innerHTML = '<i data-lucide="' + btn.icon + '" class="modal-method-icon"></i><span>' + btn.label + '</span>';
+        } else {
+          el.textContent = btn.label;
+        }
+        if (btn.className) el.className = btn.className;
+        el.style.margin = '0';
+        el.onclick = function () {
+          overlay.classList.remove('open');
+          resolve(btn.value);
+        };
+        actions.appendChild(el);
+      });
+      overlay.classList.add('open');
+      if (window.lucide) lucide.createIcons();
+    });
+  }
+
+  function customAlert(message, icon) {
+    return showCustomModal(message, icon || 'info', [{ label: 'OK', value: true }]);
+  }
+
+  function customConfirm(message, icon) {
+    return showCustomModal(message, icon || 'triangle-alert', [
+      { label: 'Batal', value: false, className: 'secondary' },
+      { label: 'Ya, Lanjutkan', value: true, className: 'danger' },
+    ], '#dc2626');
+  }
+
+  function confirmSubmit(e, message, icon) {
+    e.preventDefault();
+    const form = e.target;
+    customConfirm(message, icon).then(function (ok) {
+      if (ok) form.submit();
+    });
+    return false;
+  }
+</script>

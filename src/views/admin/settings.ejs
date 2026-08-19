@@ -1,0 +1,43 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <h1>Pengaturan</h1>
+    <form method="POST" action="/admin/settings" enctype="multipart/form-data">
+      <label for="waNumber">Nomor WhatsApp Admin</label>
+      <input type="text" id="waNumber" name="waNumber" placeholder="contoh: 081234567890" value="<%= settings.waNumber || '' %>">
+
+      <div style="display:flex; gap:12px;">
+        <div style="flex:1;">
+          <label for="bankName">Nama Bank</label>
+          <input type="text" id="bankName" name="bankName" placeholder="contoh: BCA" value="<%= settings.bankName || '' %>">
+        </div>
+        <div style="flex:1;">
+          <label for="bankAccountNumber">Nomor Rekening</label>
+          <input type="text" id="bankAccountNumber" name="bankAccountNumber" placeholder="contoh: 1234567890" value="<%= settings.bankAccountNumber || '' %>">
+        </div>
+      </div>
+
+      <label for="bankAccountName">Atas Nama</label>
+      <input type="text" id="bankAccountName" name="bankAccountName" placeholder="contoh: Agung Fitrah" value="<%= settings.bankAccountName || '' %>">
+
+      <label for="qrisImage">Gambar QRIS</label>
+      <% if (settings.qrisImage) { %>
+        <div style="margin-bottom:8px; text-align:center;">
+          <img src="<%= settings.qrisImage %>" alt="QRIS" style="max-width:200px; border:1px solid #ddd; border-radius:8px; display:block; margin:0 auto 8px;">
+          <label style="display:flex; align-items:center; justify-content:center; gap:6px; font-weight:normal;">
+            <input type="checkbox" name="removeQris" value="1" style="width:auto;"> Hapus gambar QRIS ini
+          </label>
+        </div>
+      <% } %>
+      <input type="file" id="qrisImage" name="qrisImage" accept="image/*">
+
+      <button type="submit">Simpan</button>
+    </form>
+  </div>
+</div>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

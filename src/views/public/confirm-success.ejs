@@ -1,0 +1,55 @@
+<%- include('../partials/head') %>
+<%- include('../partials/public-header') %>
+<div class="container">
+  <div class="card success-card">
+    <div class="success-icon"><i data-lucide="check"></i></div>
+    <h1 class="success-title">Konfirmasi Tersimpan</h1>
+    <p class="success-subtitle">Terima kasih, konfirmasi pembayaran kamu sudah kami terima.</p>
+
+    <div class="receipt">
+      <div class="receipt-label"><%= codeItem.label %></div>
+      <div class="receipt-row">
+        <span class="muted">Nama</span>
+        <span><%= contactName %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="muted">Jumlah Beli</span>
+        <span><%= qty %> pcs</span>
+      </div>
+      <div class="receipt-row">
+        <span class="muted">Metode</span>
+        <span><%= method === 'tf' ? 'Transfer' : (method === 'qris' ? 'QRIS' : 'Cash') %></span>
+      </div>
+      <div class="receipt-row">
+        <span class="muted">Status</span>
+        <span><%= status === 'later' ? 'Bayar Nanti' : 'Lunas' %></span>
+      </div>
+      <% if (typeof unpaidSettled !== 'undefined' && unpaidSettled > 0) { %>
+        <div class="receipt-row">
+          <span class="muted">Subtotal pesanan ini</span>
+          <span>Rp<%= formatRupiah(amount) %></span>
+        </div>
+        <div class="receipt-row">
+          <span class="muted">+ Tunggakan dilunasi</span>
+          <span>Rp<%= formatRupiah(unpaidSettled) %></span>
+        </div>
+      <% } %>
+      <div class="receipt-total">
+        <span>Total</span>
+        <span>Rp<%= formatRupiah(amount + (typeof unpaidSettled !== 'undefined' ? unpaidSettled : 0)) %></span>
+      </div>
+    </div>
+
+    <% if (typeof waUrl !== 'undefined' && waUrl) { %>
+      <a href="<%= waUrl %>" target="_blank" id="waLink" class="btn success" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; margin-top: 20px;">
+        <i data-lucide="message-circle"></i> Buka WhatsApp
+      </a>
+      <p class="muted" style="margin-top:8px; text-align:center;">Klik tombol di atas untuk kirim notifikasi ke WhatsApp admin.</p>
+    <% } %>
+  </div>
+</div>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

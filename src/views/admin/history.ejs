@@ -1,0 +1,218 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1 style="margin-bottom:0;">Riwayat Konfirmasi Bayar</h1>
+      <button type="button" id="openFilterBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px; flex-shrink:0;">
+        <i data-lucide="sliders-horizontal"></i> Filter<% if (activeFilterCount > 0) { %> (<%= activeFilterCount %>)<% } %>
+      </button>
+    </div>
+  </div>
+
+  <% groups.forEach(function(group) { %>
+    <div class="card">
+      <h2><%= group.label %></h2>
+      <div style="overflow-x:auto;">
+      <table>
+        <thead>
+          <tr><th style="width:32px;"><input type="checkbox" class="select-group"></th><th>Waktu</th><th>Nama</th><th>Jumlah</th><th>Total</th><th>Metode</th><th>Status</th><th>Validasi</th></tr>
+        </thead>
+        <tbody>
+          <% group.items.forEach(function(c) { %>
+            <tr>
+              <td><input type="checkbox" value="<%= c.id %>" class="row-check"></td>
+              <td><%= new Date(c.createdAt).toLocaleString('id-ID') %></td>
+              <td><%= c.contactName %></td>
+              <td><%= c.qty || 1 %></td>
+              <td title="Rp<%= Number(c.amount || 0).toLocaleString('id-ID') %>">Rp<%= formatRupiah(c.amount) %></td>
+              <td>
+                <form method="POST" action="/admin/history/<%= c.id %>/update" style="margin:0;">
+                  <input type="hidden" name="status" value="<%= c.status || 'lunas' %>">
+                  <select name="method" onchange="this.form.submit()" style="width:auto; padding:4px; font-size:13px;">
+                    <option value="cash" <%= c.method === 'cash' ? 'selected' : '' %>>Cash</option>
+                    <option value="tf" <%= c.method === 'tf' ? 'selected' : '' %>>Transfer</option>
+                    <option value="qris" <%= c.method === 'qris' ? 'selected' : '' %>>QRIS</option>
+                  </select>
+                </form>
+              </td>
+              <td>
+                <form method="POST" action="/admin/history/<%= c.id %>/update" style="margin:0;">
+                  <input type="hidden" name="method" value="<%= c.method %>">
+                  <select name="status" onchange="this.form.submit()" style="width:auto; padding:4px; font-size:13px;">
+                    <option value="lunas" <%= (c.status || 'lunas') === 'lunas' ? 'selected' : '' %>>Lunas</option>
+                    <option value="later" <%= c.status === 'later' ? 'selected' : '' %>>Bayar Nanti</option>
+                  </select>
+                </form>
+              </td>
+              <td>
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <form method="POST" action="/admin/history/<%= c.id %>/validate" style="margin:0;">
+                    <button type="submit" class="<%= c.validated ? 'success' : 'outline' %>" style="margin:0; padding:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;" title="<%= c.validated ? 'Tervalidasi (klik untuk batalkan)' : 'Belum divalidasi (klik untuk validasi)' %>">
+                      <i data-lucide="<%= c.validated ? 'circle-check' : 'circle' %>"></i>
+                    </button>
+                  </form>
+                  <form method="POST" action="/admin/history/<%= c.id %>/delete" style="margin:0;" onsubmit="return confirmSubmit(event, 'Hapus riwayat ini?', 'shredder');">
+                    <button type="submit" class="danger" style="margin:0; padding:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;" title="Hapus">
+                      <i data-lucide="trash-2"></i>
+                    </button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      </div>
+    </div>
+  <% }); %>
+
+  <% if (groups.length === 0) { %>
+    <div class="card empty-state">
+      <i data-lucide="history"></i>
+      <p>Tidak ada riwayat yang cocok.</p>
+    </div>
+  <% } %>
+</div>
+
+<form id="bulkForm" method="POST" style="display:none;"></form>
+<div class="bulk-bar" id="bulkBar">
+  <span id="bulkCount" class="muted">0 dipilih</span>
+  <div style="display:flex; gap:8px;">
+    <button type="button" id="bulkValidateBtn" class="success" style="margin:0;">
+      <i data-lucide="circle-check"></i> Tandai Tervalidasi
+    </button>
+    <button type="button" id="bulkDeleteBtn" class="danger" style="margin:0;">
+      <i data-lucide="trash-2"></i> Hapus
+    </button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="filterModal">
+  <div class="modal-box wide" style="text-align:left;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="margin:0;">Filter Riwayat</h2>
+      <button type="button" id="closeFilterBtn" class="action-menu-toggle" aria-label="Tutup">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form method="GET" action="/admin/history" style="display:flex; flex-wrap:wrap; gap:12px;">
+      <div style="flex:1; min-width:130px;">
+        <label for="from">Dari Tanggal</label>
+        <input type="date" id="from" name="from" value="<%= filters.from %>">
+      </div>
+      <div style="flex:1; min-width:130px;">
+        <label for="to">Sampai Tanggal</label>
+        <input type="date" id="to" name="to" value="<%= filters.to %>">
+      </div>
+      <div style="flex:1; min-width:150px;">
+        <label for="label">Produk</label>
+        <select id="label" name="label">
+          <option value="">Semua</option>
+          <% labels.forEach(function(l) { %>
+            <option value="<%= l %>" <%= filters.label === l ? 'selected' : '' %>><%= l %></option>
+          <% }); %>
+        </select>
+      </div>
+      <div style="flex:1; min-width:120px;">
+        <label for="method">Metode</label>
+        <select id="method" name="method">
+          <option value="">Semua</option>
+          <option value="cash" <%= filters.method === 'cash' ? 'selected' : '' %>>Cash</option>
+          <option value="tf" <%= filters.method === 'tf' ? 'selected' : '' %>>Transfer</option>
+          <option value="qris" <%= filters.method === 'qris' ? 'selected' : '' %>>QRIS</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:120px;">
+        <label for="status">Status</label>
+        <select id="status" name="status">
+          <option value="">Semua</option>
+          <option value="lunas" <%= filters.status === 'lunas' ? 'selected' : '' %>>Lunas</option>
+          <option value="later" <%= filters.status === 'later' ? 'selected' : '' %>>Bayar Nanti</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:130px;">
+        <label for="validated">Validasi</label>
+        <select id="validated" name="validated">
+          <option value="">Semua</option>
+          <option value="true" <%= filters.validated === 'true' ? 'selected' : '' %>>Sudah Divalidasi</option>
+          <option value="false" <%= filters.validated === 'false' ? 'selected' : '' %>>Belum Divalidasi</option>
+        </select>
+      </div>
+      <div style="flex:1; min-width:150px;">
+        <label for="q">Nama</label>
+        <input type="text" id="q" name="q" placeholder="Cari nama" value="<%= filters.q %>">
+      </div>
+      <div style="width:100%; display:flex; gap:10px; margin-top:6px;">
+        <button type="submit" style="margin:0; flex:1;">Terapkan Filter</button>
+        <a class="btn secondary" href="/admin/history" style="margin:0; flex:1; text-align:center;">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  if (window.lucide) lucide.createIcons();
+  (function () {
+    const modal = document.getElementById('filterModal');
+    const openBtn = document.getElementById('openFilterBtn');
+    const closeBtn = document.getElementById('closeFilterBtn');
+    if (!modal || !openBtn) return;
+    openBtn.addEventListener('click', function () { modal.classList.add('open'); });
+    closeBtn.addEventListener('click', function () { modal.classList.remove('open'); });
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) modal.classList.remove('open');
+    });
+  })();
+
+  (function () {
+    const bulkBar = document.getElementById('bulkBar');
+    const bulkCount = document.getElementById('bulkCount');
+    const bulkForm = document.getElementById('bulkForm');
+    const rowChecks = Array.from(document.querySelectorAll('.row-check'));
+    const groupChecks = Array.from(document.querySelectorAll('.select-group'));
+
+    function refresh() {
+      const checked = rowChecks.filter((c) => c.checked);
+      bulkBar.classList.toggle('open', checked.length > 0);
+      bulkCount.textContent = checked.length + ' dipilih';
+    }
+
+    rowChecks.forEach((c) => c.addEventListener('change', refresh));
+    groupChecks.forEach((groupCheck, i) => {
+      const table = groupCheck.closest('table');
+      groupCheck.addEventListener('change', function () {
+        table.querySelectorAll('.row-check').forEach((c) => { c.checked = groupCheck.checked; });
+        refresh();
+      });
+    });
+
+    function submitBulk(action) {
+      const ids = rowChecks.filter((c) => c.checked).map((c) => c.value);
+      if (!ids.length) return;
+      bulkForm.innerHTML = '';
+      ids.forEach((id) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'ids';
+        input.value = id;
+        bulkForm.appendChild(input);
+      });
+      bulkForm.action = action;
+      bulkForm.submit();
+    }
+
+    document.getElementById('bulkValidateBtn').addEventListener('click', function () {
+      submitBulk('/admin/history/bulk-validate');
+    });
+    document.getElementById('bulkDeleteBtn').addEventListener('click', function () {
+      const ids = rowChecks.filter((c) => c.checked).map((c) => c.value);
+      if (!ids.length) return;
+      customConfirm('Hapus ' + ids.length + ' riwayat terpilih?', 'shredder').then(function (ok) {
+        if (ok) submitBulk('/admin/history/bulk-delete');
+      });
+    });
+  })();
+</script>
+</body>
+</html>

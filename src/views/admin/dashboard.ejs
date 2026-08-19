@@ -1,0 +1,164 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <h1>Daftar Gencode</h1>
+    <% if (products.length === 0) { %>
+      <div class="empty-state">
+        <i data-lucide="package"></i>
+        <p>Belum ada produk.</p>
+        <p><a href="/admin/products">Tambah produk dulu</a> sebelum buat gencode.</p>
+      </div>
+    <% } else { %>
+      <form method="POST" action="/admin/codes" id="newCodeForm">
+        <label for="productSearch">Produk</label>
+        <div class="autocomplete">
+          <input type="text" id="productSearch" placeholder="Ketik nama produk" autocomplete="off" required>
+          <div id="productSuggestions" class="suggestions"></div>
+        </div>
+        <input type="hidden" id="productId" name="productId" value="">
+        <button type="submit">+ Buat Gencode Baru</button>
+      </form>
+    <% } %>
+  </div>
+
+  <% codes.forEach(function(codeItem) { %>
+    <div class="card">
+      <div class="list-item" style="align-items: flex-start;">
+        <div>
+          <strong><%= codeItem.label %></strong><br>
+          <span class="muted"><%= codeItem.code %> — Rp<%= formatRupiah(codeItem.price) %>/satuan</span>
+        </div>
+        <img src="/admin/codes/<%= codeItem.id %>/barcode.png" alt="QR code" style="height: 70px;">
+      </div>
+      <button type="button" onclick="openEditCode('<%= codeItem.id %>', '<%= codeItem.productId %>')">Ubah</button>
+      <button type="button" class="secondary" onclick="printCode('<%= codeItem.id %>', '<%= codeItem.code %>')">Print</button>
+      <form method="POST" action="/admin/codes/<%= codeItem.id %>/delete" style="display:inline" onsubmit="return confirmSubmit(event, 'Hapus gencode ini?', 'shredder');">
+        <button class="danger" type="submit">Hapus</button>
+      </form>
+    </div>
+  <% }); %>
+  <% if (codes.length === 0) { %>
+    <div class="card empty-state">
+      <i data-lucide="qr-code"></i>
+      <p>Belum ada gencode. Buat yang pertama di atas.</p>
+    </div>
+  <% } %>
+</div>
+
+<div class="modal-overlay" id="editCodeModal">
+  <div class="modal-box" style="text-align:left;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="margin:0;">Ubah Gencode</h2>
+      <button type="button" id="closeEditCodeBtn" class="action-menu-toggle" aria-label="Tutup">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <p class="muted" style="margin-top:0;">QR code fisik tidak berubah, cukup ganti produk tujuannya.</p>
+    <form method="POST" id="editCodeForm">
+      <label for="editCodeProductSearch">Produk</label>
+      <div class="autocomplete">
+        <input type="text" id="editCodeProductSearch" placeholder="Ketik nama produk" autocomplete="off" required>
+        <div id="editCodeProductSuggestions" class="suggestions"></div>
+      </div>
+      <input type="hidden" id="editCodeProductId" name="productId" value="">
+      <button type="submit" style="width:100%;">Simpan</button>
+    </form>
+  </div>
+</div>
+<div id="print-area">
+  <h1 class="print-title">Scan untuk Konfirmasi</h1>
+  <img id="print-qr" src="" alt="QR code" style="height: 220px;">
+  <p class="muted" id="print-link"></p>
+</div>
+<script>
+  function printCode(id, code) {
+    document.getElementById('print-link').textContent = window.location.origin + '/confirm/' + code;
+    const img = document.getElementById('print-qr');
+    img.onload = function () { window.print(); };
+    img.src = '/admin/codes/' + id + '/barcode.png';
+  }
+
+  const allProducts = <%- JSON.stringify(products.map(function(p) { return { id: p.id, label: p.label + ' — Rp' + formatRupiah(p.price) }; })) %>;
+
+  function setupProductAutocomplete(searchInput, suggestionsBox, hiddenInput, form) {
+    if (!searchInput) return;
+
+    function renderProductSuggestions() {
+      const typed = searchInput.value.trim().toLowerCase();
+      const matches = (typed
+        ? allProducts.filter(function (p) { return p.label.toLowerCase().includes(typed); })
+        : allProducts
+      ).slice(0, 10);
+      if (!matches.length) {
+        suggestionsBox.style.display = 'none';
+        suggestionsBox.innerHTML = '';
+        return;
+      }
+      suggestionsBox.innerHTML = matches.map(function (p) {
+        return '<div class="suggestion-item" data-id="' + p.id + '" data-label="' + p.label.replace(/"/g, '&quot;') + '">' + p.label + '</div>';
+      }).join('');
+      suggestionsBox.style.display = 'block';
+    }
+
+    searchInput.addEventListener('input', function () {
+      hiddenInput.value = '';
+      renderProductSuggestions();
+    });
+    searchInput.addEventListener('focus', renderProductSuggestions);
+    document.addEventListener('click', function (e) {
+      if (e.target === searchInput || suggestionsBox.contains(e.target)) return;
+      suggestionsBox.style.display = 'none';
+    });
+    suggestionsBox.addEventListener('click', function (e) {
+      const item = e.target.closest('.suggestion-item');
+      if (!item) return;
+      searchInput.value = item.dataset.label;
+      hiddenInput.value = item.dataset.id;
+      suggestionsBox.style.display = 'none';
+    });
+    form.addEventListener('submit', function (e) {
+      if (!hiddenInput.value) {
+        e.preventDefault();
+        customAlert('Pilih produk dari daftar terlebih dahulu.', 'triangle-alert');
+      }
+    });
+  }
+
+  setupProductAutocomplete(
+    document.getElementById('productSearch'),
+    document.getElementById('productSuggestions'),
+    document.getElementById('productId'),
+    document.getElementById('newCodeForm')
+  );
+
+  const editCodeModal = document.getElementById('editCodeModal');
+  const editCodeProductSearch = document.getElementById('editCodeProductSearch');
+  const editCodeProductId = document.getElementById('editCodeProductId');
+  const editCodeForm = document.getElementById('editCodeForm');
+  setupProductAutocomplete(
+    editCodeProductSearch,
+    document.getElementById('editCodeProductSuggestions'),
+    editCodeProductId,
+    editCodeForm
+  );
+
+  function openEditCode(id, productId) {
+    editCodeForm.action = '/admin/codes/' + id + '/edit';
+    editCodeProductId.value = productId;
+    const current = allProducts.find(function (p) { return p.id === productId; });
+    editCodeProductSearch.value = current ? current.label : '';
+    editCodeModal.classList.add('open');
+    editCodeProductSearch.focus();
+  }
+  document.getElementById('closeEditCodeBtn').addEventListener('click', function () {
+    editCodeModal.classList.remove('open');
+  });
+  editCodeModal.addEventListener('click', function (e) {
+    if (e.target === editCodeModal) editCodeModal.classList.remove('open');
+  });
+
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

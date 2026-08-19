@@ -1,0 +1,27 @@
+<%- include('partials/head') %>
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="brand-icon auth-logo"><img src="/favicon.svg" alt="Kasku"></div>
+    <h1 class="auth-title">Kasku</h1>
+    <p class="auth-subtitle">Masuk sebagai admin untuk kelola <br> gencode & pembayaran</p>
+    <form method="POST" action="/login">
+      <input type="hidden" name="next" value="<%= next %>">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required autofocus>
+      <% if (error) { %><div class="error"><%= error %></div><% } %>
+      <button type="submit" style="width:100%;">Masuk</button>
+    </form>
+  </div>
+  <div class="auth-footer-links">
+    <a href="/legal/terms">Syarat &amp; Ketentuan</a>
+    <span>&middot;</span>
+    <a href="/legal/security">Keamanan</a>
+    <span>&middot;</span>
+    <a href="/legal/privacy">Privasi</a>
+  </div>
+</div>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

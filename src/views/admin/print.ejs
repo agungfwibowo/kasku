@@ -1,0 +1,17 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container no-print">
+  <div class="card">
+    <p class="muted">Membuka dialog print...</p>
+    <button onclick="window.print()">Print Sekarang</button>
+  </div>
+</div>
+<div class="print-page">
+  <img src="/admin/codes/<%= codeItem.id %>/barcode.png" alt="QR code" style="height: 220px;" onload="window.print()">
+  <p class="muted">Scan untuk konfirmasi bayar<br><%= link %></p>
+</div>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

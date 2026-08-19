@@ -1,0 +1,83 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <h1>Kelola Kontak</h1>
+    <form method="POST" action="/admin/contacts">
+      <label for="name">Nama baru</label>
+      <input type="text" id="name" name="name" placeholder="Nama kontak" required>
+      <button type="submit">+ Tambah Kontak</button>
+    </form>
+  </div>
+  <div class="card">
+    <% contacts.forEach(function(contact) { %>
+      <div class="list-item">
+        <span><%= contact.name %></span>
+        <div class="action-menu">
+          <button type="button" class="action-menu-toggle" onclick="toggleActionMenu(this)"><i data-lucide="ellipsis-vertical"></i></button>
+          <div class="action-menu-dropdown">
+            <button type="button" onclick="openEditContact('<%= contact.id %>', '<%= contact.name.replace(/'/g, "\\'") %>')"><i data-lucide="pencil"></i> Ubah</button>
+            <form method="POST" action="/admin/contacts/<%= contact.id %>/delete" onsubmit="return confirmSubmit(event, 'Hapus kontak ini?', 'shredder');">
+              <button type="submit" class="danger-text"><i data-lucide="trash-2"></i> Hapus</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+    <% if (contacts.length === 0) { %>
+      <div class="empty-state">
+        <i data-lucide="users"></i>
+        <p>Belum ada kontak.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editContactModal">
+  <div class="modal-box" style="text-align:left;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="margin:0;">Ubah Kontak</h2>
+      <button type="button" id="closeEditContactBtn" class="action-menu-toggle" aria-label="Tutup">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form method="POST" id="editContactForm">
+      <label for="editContactName">Nama</label>
+      <input type="text" id="editContactName" name="name" required>
+      <button type="submit" style="width:100%;">Simpan</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const editContactModal = document.getElementById('editContactModal');
+  const editContactForm = document.getElementById('editContactForm');
+  const editContactName = document.getElementById('editContactName');
+  function openEditContact(id, name) {
+    editContactForm.action = '/admin/contacts/' + id + '/edit';
+    editContactName.value = name;
+    editContactModal.classList.add('open');
+    editContactName.focus();
+  }
+  document.getElementById('closeEditContactBtn').addEventListener('click', function () {
+    editContactModal.classList.remove('open');
+  });
+  editContactModal.addEventListener('click', function (e) {
+    if (e.target === editContactModal) editContactModal.classList.remove('open');
+  });
+
+  function toggleActionMenu(btn) {
+    const dropdown = btn.nextElementSibling;
+    const isOpen = dropdown.classList.contains('open');
+    document.querySelectorAll('.action-menu-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+    if (!isOpen) dropdown.classList.add('open');
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.action-menu')) {
+      document.querySelectorAll('.action-menu-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+    }
+  });
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

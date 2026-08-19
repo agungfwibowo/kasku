@@ -1,0 +1,94 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <h1>Produk</h1>
+    <form method="POST" action="/admin/products">
+      <label for="label">Nama produk</label>
+      <input type="text" id="label" name="label" placeholder="contoh: Peyek Kacang" required>
+      <label for="price">Harga per satuan (Rp)</label>
+      <input type="text" inputmode="numeric" id="price" name="price" placeholder="contoh: 15.000" required>
+      <button type="submit">+ Tambah Produk</button>
+    </form>
+  </div>
+  <div class="card">
+    <% products.forEach(function(product) { %>
+      <div class="list-item">
+        <span><%= product.label %> — Rp<%= formatRupiah(product.price) %>/satuan</span>
+        <div class="action-menu">
+          <button type="button" class="action-menu-toggle" onclick="toggleActionMenu(this)"><i data-lucide="ellipsis-vertical"></i></button>
+          <div class="action-menu-dropdown">
+            <button type="button" onclick="openEditProduct('<%= product.id %>', '<%= product.label.replace(/'/g, "\\'") %>', <%= Number(product.price || 0) %>)"><i data-lucide="pencil"></i> Ubah</button>
+            <form method="POST" action="/admin/products/<%= product.id %>/duplicate">
+              <button type="submit"><i data-lucide="copy"></i> Duplikat</button>
+            </form>
+            <form method="POST" action="/admin/products/<%= product.id %>/delete" onsubmit="return confirmSubmit(event, 'Hapus produk ini?', 'shredder');">
+              <button type="submit" class="danger-text"><i data-lucide="trash-2"></i> Hapus</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    <% }); %>
+    <% if (products.length === 0) { %>
+      <div class="empty-state">
+        <i data-lucide="package"></i>
+        <p>Belum ada produk.</p>
+      </div>
+    <% } %>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editProductModal">
+  <div class="modal-box" style="text-align:left;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+      <h2 style="margin:0;">Ubah Produk</h2>
+      <button type="button" id="closeEditProductBtn" class="action-menu-toggle" aria-label="Tutup">
+        <i data-lucide="x"></i>
+      </button>
+    </div>
+    <form method="POST" id="editProductForm">
+      <label for="editProductLabel">Nama produk</label>
+      <input type="text" id="editProductLabel" name="label" required>
+      <label for="editProductPrice">Harga per satuan (Rp)</label>
+      <input type="text" inputmode="numeric" id="editProductPrice" name="price" required>
+      <button type="submit" style="width:100%;">Simpan</button>
+    </form>
+  </div>
+</div>
+
+<script>
+  const editProductModal = document.getElementById('editProductModal');
+  const editProductForm = document.getElementById('editProductForm');
+  const editProductLabel = document.getElementById('editProductLabel');
+  const editProductPrice = document.getElementById('editProductPrice');
+  attachRupiahInput(editProductPrice);
+  function openEditProduct(id, label, price) {
+    editProductForm.action = '/admin/products/' + id + '/edit';
+    editProductLabel.value = label;
+    editProductPrice.value = Number(price || 0).toLocaleString('id-ID');
+    editProductModal.classList.add('open');
+    editProductLabel.focus();
+  }
+  document.getElementById('closeEditProductBtn').addEventListener('click', function () {
+    editProductModal.classList.remove('open');
+  });
+  editProductModal.addEventListener('click', function (e) {
+    if (e.target === editProductModal) editProductModal.classList.remove('open');
+  });
+
+  function toggleActionMenu(btn) {
+    const dropdown = btn.nextElementSibling;
+    const isOpen = dropdown.classList.contains('open');
+    document.querySelectorAll('.action-menu-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+    if (!isOpen) dropdown.classList.add('open');
+  }
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.action-menu')) {
+      document.querySelectorAll('.action-menu-dropdown.open').forEach(function (d) { d.classList.remove('open'); });
+    }
+  });
+  if (window.lucide) lucide.createIcons();
+  attachRupiahInput(document.getElementById('price'));
+</script>
+</body>
+</html>

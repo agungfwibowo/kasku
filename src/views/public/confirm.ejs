@@ -1,0 +1,290 @@
+<%- include('../partials/head') %>
+<%- include('../partials/public-header') %>
+<div class="container">
+  <div class="card">
+    <h1>Konfirmasi Bayar</h1>
+    <h2><%= codeItem.label %></h2>
+    <p class="muted">Harga: Rp<%= formatRupiah(codeItem.price) %> / satuan</p>
+    <div id="unpaidNote" class="note-banner" style="display:none;">
+      <i data-lucide="circle-alert"></i>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <span>Jumlah yang belum dibayar: <strong id="unpaidAmount">Rp0</strong></span>
+        <label id="payOffLabel" style="display:none; margin:0">
+          <input type="checkbox" id="payOffUnpaid" name="payOffUnpaid" value="1" form="confirmForm">
+          Sekaligus lunasi tunggakan ini
+        </label>
+      </div>
+    </div>
+    <form method="POST" action="/confirm/<%= codeItem.code %>" id="confirmForm">
+      <label for="name">Nama</label>
+      <div class="autocomplete">
+        <input type="text" id="name" name="newContactName" placeholder="Ketik nama" autocomplete="off" required>
+        <div id="suggestions" class="suggestions"></div>
+      </div>
+      <input type="hidden" id="contactId" name="contactId" value="">
+      <div id="newContactHint" class="muted" style="display:none; margin-top: 6px;">+ Nama baru, akan ditambahkan ke kontak</div>
+
+      <label for="qty">Jumlah</label>
+      <input type="number" id="qty" name="qty" inputmode="numeric" min="1" step="1" value="<%= qty %>" required>
+      <p class="muted">Total: <strong id="totalDisplay">Rp0</strong></p>
+
+      <label>Status Bayar</label>
+      <div class="radio-group">
+        <label><input type="radio" name="status" value="lunas" checked> Lunas</label>
+        <label><input type="radio" name="status" value="later"> Bayar Nanti</label>
+      </div>
+
+      <div id="methodSection">
+        <label>Metode Bayar</label>
+        <div class="radio-group stacked">
+          <label><input type="radio" name="method" value="cash" checked> <i data-lucide="banknote"></i> Cash</label>
+          <label><input type="radio" name="method" value="tf"> <i data-lucide="landmark"></i> Transfer</label>
+          <% if (settings.qrisImage) { %>
+            <label><input type="radio" name="method" value="qris"> <i data-lucide="qr-code"></i> QRIS</label>
+          <% } %>
+        </div>
+
+        <% if (settings.bankAccountNumber) { %>
+          <div id="bankInfo" class="card" style="display:none; background:#f4f5f7; padding:12px; margin-top:8px;">
+            <p style="margin:0;">Transfer ke:</p>
+            <p style="margin:4px 0 0; display:flex; align-items:center; gap:8px;">
+              <strong><%= settings.bankName %> — <%= settings.bankAccountNumber %></strong>
+              <button type="button" id="copyRekBtn" class="secondary" style="margin:0; padding:4px 10px; font-size:13px;" data-value="<%= settings.bankAccountNumber %>"><i data-lucide="copy"></i> Salin</button>
+            </p>
+            <p style="margin:0;" class="muted">a.n. <%= settings.bankAccountName %></p>
+            <% if ((settings.bankName || '').toLowerCase().includes('mandiri')) { %>
+              <button type="button" id="openLivinBtn" class="outline" style="margin-top:8px; width:100%;"><i data-lucide="smartphone"></i> Buka Livin' by Mandiri</button>
+            <% } %>
+          </div>
+        <% } %>
+
+        <% if (settings.qrisImage) { %>
+          <div id="qrisInfo" class="card" style="display:none; background:#f4f5f7; padding:12px; margin-top:8px; text-align:center;">
+            <p style="margin:0 0 8px;">Scan QRIS untuk bayar:</p>
+            <div style="position:relative; max-width:220px; margin:0 auto;">
+              <img src="<%= settings.qrisImage %>" alt="QRIS" style="width:100%; border-radius:8px; display:block;">
+              <a href="<%= settings.qrisImage %>" download="QRIS.png" title="Unduh Gambar QRIS" style="position:absolute; bottom:8px; right:8px; width:36px; height:36px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; display:flex; align-items:center; justify-content:center; text-decoration:none;"><i data-lucide="download"></i></a>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+      <% if (typeof error !== 'undefined' && error) { %><div class="error"><%= error %></div><% } %>
+      <button type="submit" id="submitBtn" style="width:100%;">Konfirmasi Bayar</button>
+    </form>
+  </div>
+</div>
+<%- include('../partials/modal') %>
+<script>
+  const contacts = <%- JSON.stringify(contacts.map(function(c) { return { id: c.id, name: c.name }; })) %>;
+  const nameInput = document.getElementById('name');
+  const contactIdInput = document.getElementById('contactId');
+  const hint = document.getElementById('newContactHint');
+  const submitBtn = document.getElementById('submitBtn');
+  const suggestionsBox = document.getElementById('suggestions');
+
+  const unpaidNote = document.getElementById('unpaidNote');
+  const unpaidAmount = document.getElementById('unpaidAmount');
+  const payOffLabel = document.getElementById('payOffLabel');
+  const payOffCheckbox = document.getElementById('payOffUnpaid');
+  let currentUnpaid = 0;
+
+  function syncPayOffVisibility() {
+    const selectedStatus = document.querySelector('input[name="status"]:checked');
+    const isLunas = selectedStatus && selectedStatus.value === 'lunas';
+    if (currentUnpaid > 0 && isLunas) {
+      payOffLabel.style.display = 'flex';
+    } else {
+      payOffLabel.style.display = 'none';
+      payOffCheckbox.checked = false;
+    }
+    syncTotal();
+  }
+
+  function syncUnpaid(contactId) {
+    if (!contactId) {
+      unpaidNote.style.display = 'none';
+      currentUnpaid = 0;
+      syncPayOffVisibility();
+      return;
+    }
+    fetch('/confirm/<%= codeItem.code %>/unpaid?contactId=' + encodeURIComponent(contactId))
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        currentUnpaid = data.amount || 0;
+        if (currentUnpaid > 0) {
+          unpaidAmount.textContent = 'Rp' + formatRupiah(currentUnpaid);
+          unpaidNote.style.display = 'flex';
+          if (window.lucide) lucide.createIcons();
+        } else {
+          unpaidNote.style.display = 'none';
+        }
+        syncPayOffVisibility();
+      })
+      .catch(function () { unpaidNote.style.display = 'none'; currentUnpaid = 0; syncPayOffVisibility(); });
+  }
+
+  function syncName() {
+    const typed = nameInput.value.trim().toLowerCase();
+    const match = contacts.find(function (c) { return c.name.toLowerCase() === typed; });
+    if (match) {
+      contactIdInput.value = match.id;
+      hint.style.display = 'none';
+      submitBtn.textContent = 'Konfirmasi Bayar';
+    } else {
+      contactIdInput.value = '';
+      hint.style.display = typed ? 'block' : 'none';
+      submitBtn.textContent = typed ? '+ Buat Baru & Konfirmasi Bayar' : 'Konfirmasi Bayar';
+    }
+    syncUnpaid(contactIdInput.value);
+  }
+
+  function renderSuggestions() {
+    const typed = nameInput.value.trim().toLowerCase();
+    const matches = (typed
+      ? contacts.filter(function (c) { return c.name.toLowerCase().includes(typed); })
+      : contacts
+    ).slice(0, 10);
+    if (!matches.length) {
+      suggestionsBox.style.display = 'none';
+      suggestionsBox.innerHTML = '';
+      return;
+    }
+    suggestionsBox.innerHTML = matches.map(function (c) {
+      return '<div class="suggestion-item" data-name="' + c.name.replace(/"/g, '&quot;') + '">' + c.name + '</div>';
+    }).join('');
+    suggestionsBox.style.display = 'block';
+  }
+
+  nameInput.addEventListener('input', function () {
+    syncName();
+    renderSuggestions();
+  });
+  nameInput.addEventListener('focus', renderSuggestions);
+  document.addEventListener('click', function (e) {
+    if (e.target === nameInput || suggestionsBox.contains(e.target)) return;
+    suggestionsBox.style.display = 'none';
+  });
+  suggestionsBox.addEventListener('click', function (e) {
+    const item = e.target.closest('.suggestion-item');
+    if (!item) return;
+    nameInput.value = item.dataset.name;
+    suggestionsBox.style.display = 'none';
+    syncName();
+  });
+
+  const price = <%- Number(codeItem.price) || 0 %>;
+  const qtyInput = document.getElementById('qty');
+  const totalDisplay = document.getElementById('totalDisplay');
+  function syncTotal() {
+    const qty = parseInt(qtyInput.value, 10) || 0;
+    const extra = (payOffCheckbox && payOffCheckbox.checked) ? currentUnpaid : 0;
+    totalDisplay.textContent = 'Rp' + formatRupiah(price * qty + extra);
+  }
+  qtyInput.addEventListener('input', syncTotal);
+  payOffCheckbox.addEventListener('change', syncTotal);
+  syncTotal();
+  syncName();
+
+  const bankInfo = document.getElementById('bankInfo');
+  const qrisInfo = document.getElementById('qrisInfo');
+  if (bankInfo || qrisInfo) {
+    const methodRadios = document.querySelectorAll('input[name="method"]');
+    function syncMethodInfo() {
+      const selected = document.querySelector('input[name="method"]:checked');
+      const value = selected ? selected.value : '';
+      if (bankInfo) bankInfo.style.display = value === 'tf' ? 'block' : 'none';
+      if (qrisInfo) qrisInfo.style.display = value === 'qris' ? 'block' : 'none';
+    }
+    methodRadios.forEach(function (radio) { radio.addEventListener('change', syncMethodInfo); });
+    syncMethodInfo();
+  }
+
+  const methodSection = document.getElementById('methodSection');
+  const statusRadios = document.querySelectorAll('input[name="status"]');
+  function syncStatusSection() {
+    const selected = document.querySelector('input[name="status"]:checked');
+    const isLater = selected && selected.value === 'later';
+    methodSection.style.display = isLater ? 'none' : 'block';
+    syncPayOffVisibility();
+  }
+  statusRadios.forEach(function (radio) { radio.addEventListener('change', syncStatusSection); });
+  syncStatusSection();
+
+  const copyRekBtn = document.getElementById('copyRekBtn');
+  if (copyRekBtn) {
+    function fallbackCopy(text) {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try { document.execCommand('copy'); } catch (e) {}
+      document.body.removeChild(textarea);
+    }
+    copyRekBtn.addEventListener('click', function () {
+      const originalHTML = copyRekBtn.innerHTML;
+      const showCopied = function () {
+        copyRekBtn.innerHTML = '<i data-lucide="check"></i> Tersalin';
+        if (window.lucide) lucide.createIcons();
+        setTimeout(function () { copyRekBtn.innerHTML = originalHTML; }, 1500);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(copyRekBtn.dataset.value).then(showCopied, function () {
+          fallbackCopy(copyRekBtn.dataset.value);
+          showCopied();
+        });
+      } else {
+        fallbackCopy(copyRekBtn.dataset.value);
+        showCopied();
+      }
+    });
+  }
+
+  const openLivinBtn = document.getElementById('openLivinBtn');
+  if (openLivinBtn) {
+    openLivinBtn.addEventListener('click', function () {
+      const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+      const url = isIOS
+        ? 'https://apps.apple.com/us/app/livin-by-mandiri/id1555414743'
+        : 'https://play.google.com/store/apps/details?id=id.bmri.livin';
+      window.open(url, '_blank');
+    });
+  }
+
+  if (window.lucide) lucide.createIcons();
+
+  const statusButtons = [
+    { label: 'Lunas', value: 'lunas', icon: 'circle-check', className: 'modal-method-card' },
+    { label: 'Bayar Nanti', value: 'later', icon: 'clock', className: 'modal-method-card' },
+  ];
+  showCustomModal('Status pembayaran?', 'wallet', statusButtons).then(function (statusValue) {
+    const statusRadio = document.querySelector('input[name="status"][value="' + statusValue + '"]');
+    if (statusRadio) {
+      statusRadio.checked = true;
+      statusRadio.dispatchEvent(new Event('change'));
+    }
+
+    if (statusValue === 'later') {
+      nameInput.focus();
+      return;
+    }
+
+    const methodButtons = [
+      { label: 'Cash', value: 'cash', icon: 'banknote', className: 'modal-method-card' },
+      { label: 'Transfer', value: 'tf', icon: 'landmark', className: 'modal-method-card' },
+      <% if (settings.qrisImage) { %> { label: 'QRIS', value: 'qris', icon: 'qr-code', className: 'modal-method-card' }, <% } %>
+    ];
+    return showCustomModal('Pilih metode pembayaran', 'credit-card', methodButtons).then(function (value) {
+      const radio = document.querySelector('input[name="method"][value="' + value + '"]');
+      if (radio) {
+        radio.checked = true;
+        radio.dispatchEvent(new Event('change'));
+      }
+      nameInput.focus();
+    });
+  });
+</script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<div class="topbar">
+  <div class="topbar-inner">
+    <a href="/admin" class="brand">
+      <span class="brand-icon"><img src="/favicon.svg" alt="Kasku"></span>
+      <span class="brand-name">Kasku</span>
+    </a>
+    <nav class="nav-links" id="navLinks">
+      <a href="/admin" class="<%= typeof currentPath !== 'undefined' && (currentPath === '/' || currentPath.startsWith('/codes')) ? 'active' : '' %>"><i data-lucide="qr-code"></i> Gencode</a>
+      <a href="/admin/products" class="<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/products') ? 'active' : '' %>"><i data-lucide="package"></i> Produk</a>
+      <a href="/admin/contacts" class="<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/contacts') ? 'active' : '' %>"><i data-lucide="users"></i> Kontak</a>
+      <a href="/admin/history" class="<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/history') ? 'active' : '' %>"><i data-lucide="history"></i> Riwayat</a>
+      <a href="/admin/settings" class="<%= typeof currentPath !== 'undefined' && currentPath.startsWith('/settings') ? 'active' : '' %>"><i data-lucide="settings"></i> Pengaturan</a>
+    </nav>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <form method="POST" action="/logout" style="margin:0;" onsubmit="return confirmSubmit(event, 'Keluar dari akun admin?', 'door-open');">
+      <button class="secondary" type="submit" style="margin:0; display:flex; align-items:center; gap:6px;"><i data-lucide="door-open"></i> <span class="logout-label">Logout</span></button>
+    </form>
+    <button type="button" class="nav-burger" id="navBurger" aria-label="Menu">
+      <i data-lucide="menu"></i>
+    </button>
+  </div>
+</div>
+<%- include('modal') %>
+<script>
+  (function () {
+    const burger = document.getElementById('navBurger');
+    const nav = document.getElementById('navLinks');
+    if (!burger || !nav) return;
+    burger.addEventListener('click', function (e) {
+      e.stopPropagation();
+      nav.classList.toggle('open');
+    });
+    document.addEventListener('click', function (e) {
+      if (nav.classList.contains('open') && !nav.contains(e.target) && e.target !== burger) {
+        nav.classList.remove('open');
+      }
+    });
+  })();
+</script>
