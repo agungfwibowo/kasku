@@ -49,11 +49,11 @@ function initNotifBell() {
     list.innerHTML = html + seeAll;
   }
 
-  async function loadNotifications() {
+  async function loadNotifications(listAlso) {
     const res = await fetch('/admin/notifications', { headers: { Accept: 'application/json' } });
     const data = await res.json();
     renderBadge(data.unreadCount);
-    renderList(data.items);
+    if (listAlso) renderList(data.items);
   }
 
   function toggleDropdown() {
@@ -62,7 +62,7 @@ function initNotifBell() {
       dropdown.classList.remove('open');
     } else {
       dropdown.classList.add('open');
-      loadNotifications();
+      loadNotifications(true);
     }
   }
 
@@ -85,8 +85,17 @@ function initNotifBell() {
   });
 
   markAllBtn.addEventListener('click', function () {
-    fetch('/admin/notifications/read-all', { method: 'POST' }).then(loadNotifications);
+    fetch('/admin/notifications/read-all', { method: 'POST' }).then(function () { loadNotifications(true); });
   });
 
   loadNotifications();
+
+  const POLL_INTERVAL = 20000;
+  setInterval(function () {
+    loadNotifications(dropdown.classList.contains('open'));
+  }, POLL_INTERVAL);
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') loadNotifications(dropdown.classList.contains('open'));
+  });
 }
