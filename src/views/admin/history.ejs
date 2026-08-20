@@ -25,7 +25,7 @@
         </thead>
         <tbody>
           <% group.items.forEach(function(c) { %>
-            <tr class="<%= c.status === 'later' ? 'row-unpaid' : '' %>">
+            <tr id="row-<%= c.id %>" class="<%= c.status === 'later' ? 'row-unpaid' : '' %>">
               <td><input type="checkbox" value="<%= c.id %>" class="row-check"></td>
               <td><%= new Date(c.createdAt).toLocaleString('id-ID') %></td>
               <td><%= c.contactName %></td>
@@ -233,6 +233,20 @@
         }, { threshold: 1 });
         observer.observe(sentinel);
       });
+    }
+
+    const highlightId = new URLSearchParams(window.location.search).get('highlight');
+    if (highlightId) {
+      const row = document.getElementById('row-' + highlightId);
+      if (row) {
+        row.closest('.group-card') && row.closest('.group-card').classList.remove('collapsed');
+        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        row.classList.add('row-highlight');
+        setTimeout(function () { row.classList.remove('row-highlight'); }, 3000);
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.delete('highlight');
+      window.history.replaceState({}, '', url);
     }
   })();
 </script>

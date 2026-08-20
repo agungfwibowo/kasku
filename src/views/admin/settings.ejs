@@ -35,9 +35,18 @@
       <button type="submit">Simpan</button>
     </form>
   </div>
+
+  <div class="card">
+    <h2>Notifikasi Push</h2>
+    <p class="muted" style="margin-top:0;">Dapatkan notifikasi langsung di HP/laptop ini setiap ada konfirmasi pembayaran baru.</p>
+    <button type="button" id="pushToggleBtn" style="display:flex; align-items:center; gap:6px;">
+      <i data-lucide="bell"></i><span class="btn-spinner"></span> <span id="pushToggleLabel">Memuat...</span>
+    </button>
+  </div>
 </div>
 <script>
   if (window.lucide) lucide.createIcons();
+  initPushButton(document.getElementById('pushToggleBtn'), document.getElementById('pushToggleLabel'));
 </script>
 </body>
 </html>

@@ -1,0 +1,62 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <h1 style="margin-bottom:0;">Semua Notifikasi</h1>
+      <% if (unreadCount > 0) { %>
+        <button type="button" id="markAllBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px;">
+          <i data-lucide="check-check"></i> Tandai semua dibaca
+        </button>
+      <% } else { %>
+        <span class="muted">Semua sudah dibaca</span>
+      <% } %>
+    </div>
+  </div>
+
+  <% if (groups.length === 0) { %>
+    <div class="card notif-empty" style="padding:40px 16px;">
+      <i data-lucide="inbox"></i>
+      <p>Belum ada notifikasi</p>
+    </div>
+  <% } else { %>
+    <% groups.forEach(function(group) { %>
+      <div class="card" style="padding:0;">
+        <div class="notif-day-header"><%= group.label %></div>
+        <div class="notifPageList">
+          <% group.items.forEach(function(n) { %>
+            <div class="notif-item<%= n.read ? '' : ' unread' %>" data-id="<%= n.id %>" data-url="<%= n.url %>">
+              <div class="notif-item-title"><%= n.title %></div>
+              <div class="notif-item-body"><%= n.body %></div>
+              <div class="notif-item-time"><%= new Date(n.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) %></div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+    <% }); %>
+  <% } %>
+</div>
+<script>
+  if (window.lucide) lucide.createIcons();
+
+  document.querySelector('.container').addEventListener('click', function (e) {
+    const item = e.target.closest('.notif-item');
+    if (!item) return;
+    const id = item.dataset.id;
+    const url = item.dataset.url;
+    fetch('/admin/notifications/' + id + '/read', { method: 'POST' }).finally(function () {
+      window.location.href = url;
+    });
+  });
+
+  const markAllBtn = document.getElementById('markAllBtn');
+  if (markAllBtn) {
+    markAllBtn.addEventListener('click', function () {
+      fetch('/admin/notifications/read-all', { method: 'POST' }).then(function () {
+        window.location.reload();
+      });
+    });
+  }
+</script>
+</body>
+</html>

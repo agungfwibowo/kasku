@@ -13,6 +13,20 @@
     </nav>
   </div>
   <div style="display:flex; align-items:center; gap:8px;">
+    <div class="action-menu" id="notifMenu">
+      <button type="button" class="nav-bell" id="notifBellBtn" aria-label="Notifikasi">
+        <i data-lucide="bell"></i>
+        <span class="notif-badge" id="notifBadge" style="display:none;"></span>
+      </button>
+      <div class="action-menu-dropdown notif-dropdown" id="notifDropdown">
+        <div class="notif-dropdown-header">
+          <strong>Notifikasi</strong>
+          <button type="button" id="notifMarkAllBtn"><i data-lucide="check-check"></i> Tandai semua dibaca</button>
+          <span id="notifAllReadLabel" class="muted" style="display:none; font-size:12px;">Semua sudah dibaca</span>
+        </div>
+        <div id="notifList" class="notif-list"></div>
+      </div>
+    </div>
     <form method="POST" action="/logout" style="margin:0;" onsubmit="return confirmSubmit(event, 'Keluar dari akun admin?', 'door-open');">
       <button class="secondary" type="submit" style="margin:0; display:flex; align-items:center; gap:6px;"><i data-lucide="door-open"></i> <span class="logout-label">Logout</span></button>
     </form>
@@ -22,6 +36,8 @@
   </div>
 </div>
 <%- include('modal') %>
+<script src="/js/push.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>
+<script src="/js/notif-bell.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : '1' %>"></script>
 <script>
   (function () {
     const burger = document.getElementById('navBurger');
@@ -37,4 +53,5 @@
       }
     });
   })();
+  initNotifBell();
 </script>

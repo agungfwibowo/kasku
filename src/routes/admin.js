@@ -6,6 +6,8 @@ const store = require('../lib/store');
 const { generateBarcodePng, generateCode } = require('../lib/barcode');
 const { requireAdmin } = require('../lib/auth');
 const { parseRupiah } = require('../lib/format');
+const push = require('../lib/push');
+const notifications = require('../lib/notifications');
 
 const router = express.Router();
 
@@ -168,6 +170,61 @@ router.post('/settings', upload.single('qrisImage'), (req, res) => {
     qrisImage,
   });
   res.redirect('/admin/settings');
+});
+
+router.get('/push/vapid-public-key', (req, res) => {
+  res.json({ publicKey: push.publicKey, enabled: push.enabled });
+});
+
+router.post('/push/subscribe', express.json(), (req, res) => {
+  push.subscribe(req.body);
+  res.status(201).end();
+});
+
+router.post('/push/unsubscribe', express.json(), (req, res) => {
+  push.unsubscribe(req.body.endpoint);
+  res.status(204).end();
+});
+
+router.get('/notifications', (req, res) => {
+  if (req.accepts(['json', 'html']) === 'html') {
+    return res.redirect('/admin/notifications/all');
+  }
+  res.json({ items: notifications.list(), unreadCount: notifications.unreadCount() });
+});
+
+router.get('/notifications/all', (req, res) => {
+  const items = notifications.list();
+  const startOfDay = (d) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  const todayStart = startOfDay(new Date());
+  const groups = [];
+
+  items.forEach((n) => {
+    const diffDays = Math.round((todayStart - startOfDay(new Date(n.createdAt))) / 86400000);
+    let label;
+    if (diffDays === 0) label = 'Hari ini';
+    else if (diffDays === 1) label = 'Kemarin';
+    else label = new Date(n.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+
+    let group = groups.find((g) => g.label === label);
+    if (!group) {
+      group = { label, items: [] };
+      groups.push(group);
+    }
+    group.items.push(n);
+  });
+
+  res.render('admin/notifications', { groups, unreadCount: items.filter((n) => !n.read).length });
+});
+
+router.post('/notifications/:id/read', (req, res) => {
+  notifications.markRead(req.params.id);
+  res.status(204).end();
+});
+
+router.post('/notifications/read-all', (req, res) => {
+  notifications.markAllRead();
+  res.status(204).end();
 });
 
 router.get('/history', (req, res) => {

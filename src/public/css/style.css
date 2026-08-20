@@ -62,6 +62,39 @@ body {
   border-radius: 6px;
 }
 .nav-burger:hover { background: rgba(255,255,255,0.08); }
+.nav-bell {
+  position: relative;
+  background: transparent;
+  border: none;
+  color: #c7cbe0;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+.nav-bell:hover { background: rgba(255,255,255,0.08); color: #fff; }
+.nav-bell.active { color: #facc15; }
+
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+button.loading { cursor: wait; opacity: 0.85; }
+.btn-spinner {
+  display: none;
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+button.loading .btn-spinner { display: inline-block; }
+button.loading .lucide { display: none; }
 
 @media (max-width: 960px) {
   .topbar { position: relative; }
@@ -134,6 +167,12 @@ h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
 .group-card.collapsed .group-body { display: none; }
 tr.row-unpaid { background: #fff1cd; }
 tr.row-unpaid:nth-child(even) { background: #ffe9b3; }
+
+@keyframes row-highlight-flash {
+  0%, 100% { background: transparent; }
+  15%, 85% { background: #dbe4ff; }
+}
+tr.row-highlight { animation: row-highlight-flash 3s ease; }
 label { display: block; margin: 8px 0 4px; font-weight: 600; font-size: 13px; }
 input[type=text], input[type=password], input[type=number], input[type=date], select {
   width: 100%;
@@ -293,6 +332,88 @@ th, td { text-align: left; padding: 6px; border-bottom: 1px solid #eee; font-siz
 .action-menu-dropdown button:hover, .action-menu-dropdown a:hover { background: #f4f5f7; }
 .action-menu-dropdown > * + * { border-top: 1px solid #eee; }
 .action-menu-dropdown .danger-text { color: #dc2626; }
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #dc2626;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border: 2px solid #1a1a2e;
+}
+.notif-dropdown { min-width: 320px; max-width: 360px; padding: 0; }
+.notif-dropdown-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee;
+}
+.notif-dropdown-header strong { font-size: 14px; color: #1a1a1a; }
+.notif-dropdown-header button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: auto;
+  flex: none;
+  margin: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: #2952e3;
+  font-size: 12px;
+  font-weight: 500;
+  text-align: right;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.notif-dropdown-header button .lucide { width: 14px; height: 14px; }
+.notif-list { max-height: 320px; overflow-y: auto; }
+.notif-item {
+  display: block;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f4f5f7;
+  cursor: pointer;
+  text-align: left;
+}
+.notif-item:hover { background: #f4f5f7; }
+.notif-item.unread { background: #eef1ff; }
+.notif-item.unread:hover { background: #e2e7ff; }
+.notif-item-title { font-size: 13px; font-weight: 600; color: #1a1a1a; }
+.notif-item-body { font-size: 12px; color: #555; margin-top: 2px; }
+.notif-item-time { font-size: 11px; color: #999; margin-top: 4px; }
+.notif-empty { padding: 32px 14px; text-align: center; color: #999; }
+.notif-empty .lucide { width: 28px; height: 28px; color: #c7cbe0; margin-bottom: 8px; }
+.notif-empty p { margin: 0; font-size: 13px; }
+.notif-see-all {
+  display: block;
+  text-align: center;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #2952e3;
+  text-decoration: none;
+  border-top: 1px solid #eee;
+}
+.notif-see-all:hover { background: #f4f5f7; }
+.notif-day-header {
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-bottom: 1px solid #eee;
+}
 
 .print-page {
   max-width: 720px;

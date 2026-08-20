@@ -1,5 +1,6 @@
 const express = require('express');
 const store = require('../lib/store');
+const push = require('../lib/push');
 
 const router = express.Router();
 
@@ -83,7 +84,7 @@ router.post('/:code', (req, res) => {
   const methodValue = normalizeMethod(method);
   const statusValue = status === 'later' ? 'later' : 'lunas';
 
-  store.insert('confirmations', {
+  const newConfirmation = store.insert('confirmations', {
     codeId: codeItem.id,
     code: codeItem.code,
     label: codeItem.label,
@@ -109,6 +110,12 @@ router.post('/:code', (req, res) => {
   }
 
   const grandTotal = amountValue + unpaidSettled;
+
+  push.notifyAdmins({
+    title: 'Konfirmasi Bayar Baru',
+    body: `${contactName} — ${codeItem.label} — Rp${grandTotal.toLocaleString('id-ID')} (${methodLabel(methodValue)})`,
+    url: `/admin/history?highlight=${newConfirmation.id}`,
+  }).catch(() => {});
 
   const waNumber = normalizeWaNumber(settings.waNumber || process.env.WA_NUMBER);
   let waUrl = null;
