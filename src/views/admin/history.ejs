@@ -11,16 +11,21 @@
   </div>
 
   <% groups.forEach(function(group) { %>
-    <div class="card">
-      <h2><%= group.label %></h2>
-      <div style="overflow-x:auto;">
+    <% var belumLunas = group.items.filter(function(c) { return c.status === 'later'; }).length; %>
+    <div class="card group-card">
+      <div class="group-header sticky-title">
+        <h2><%= group.label %></h2>
+        <% if (belumLunas > 0) { %><span class="badge-later"><%= belumLunas %> belum lunas</span><% } %>
+        <i data-lucide="chevron-down" class="group-chevron"></i>
+      </div>
+      <div class="group-body" style="overflow-x:auto;">
       <table>
         <thead>
           <tr><th style="width:32px;"><input type="checkbox" class="select-group"></th><th>Waktu</th><th>Nama</th><th>Jumlah</th><th>Total</th><th>Metode</th><th>Status</th><th>Validasi</th></tr>
         </thead>
         <tbody>
           <% group.items.forEach(function(c) { %>
-            <tr>
+            <tr class="<%= c.status === 'later' ? 'row-unpaid' : '' %>">
               <td><input type="checkbox" value="<%= c.id %>" class="row-check"></td>
               <td><%= new Date(c.createdAt).toLocaleString('id-ID') %></td>
               <td><%= c.contactName %></td>
@@ -105,15 +110,6 @@
         <label for="to">Sampai Tanggal</label>
         <input type="date" id="to" name="to" value="<%= filters.to %>">
       </div>
-      <div style="flex:1; min-width:150px;">
-        <label for="label">Produk</label>
-        <select id="label" name="label">
-          <option value="">Semua</option>
-          <% labels.forEach(function(l) { %>
-            <option value="<%= l %>" <%= filters.label === l ? 'selected' : '' %>><%= l %></option>
-          <% }); %>
-        </select>
-      </div>
       <div style="flex:1; min-width:120px;">
         <label for="method">Metode</label>
         <select id="method" name="method">
@@ -140,8 +136,17 @@
         </select>
       </div>
       <div style="flex:1; min-width:150px;">
-        <label for="q">Nama</label>
-        <input type="text" id="q" name="q" placeholder="Cari nama" value="<%= filters.q %>">
+        <label for="q">Nama Kontak</label>
+        <input type="text" id="q" name="q" placeholder="Cari nama kontak" value="<%= filters.q %>">
+      </div>
+      <div style="flex:1; min-width:150px;">
+        <label for="label">Produk</label>
+        <select id="label" name="label">
+          <option value="">Semua</option>
+          <% labels.forEach(function(l) { %>
+            <option value="<%= l %>" <%= filters.label === l ? 'selected' : '' %>><%= l %></option>
+          <% }); %>
+        </select>
       </div>
       <div style="width:100%; display:flex; gap:10px; margin-top:6px;">
         <button type="submit" style="margin:0; flex:1;">Terapkan Filter</button>
@@ -212,6 +217,23 @@
         if (ok) submitBulk('/admin/history/bulk-delete');
       });
     });
+
+    document.querySelectorAll('.group-header').forEach(function (header) {
+      header.addEventListener('click', function () {
+        header.closest('.group-card').classList.toggle('collapsed');
+      });
+    });
+
+    if ('IntersectionObserver' in window) {
+      document.querySelectorAll('.sticky-title').forEach(function (title) {
+        const sentinel = document.createElement('div');
+        title.parentNode.insertBefore(sentinel, title);
+        const observer = new IntersectionObserver(function (entries) {
+          title.classList.toggle('is-stuck', !entries[0].isIntersecting);
+        }, { threshold: 1 });
+        observer.observe(sentinel);
+      });
+    }
   })();
 </script>
 </body>

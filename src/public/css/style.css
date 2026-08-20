@@ -102,6 +102,38 @@ body {
 h1, h2 { margin-top: 0; }
 h1 { font-size: 19px; font-weight: 600; margin-bottom: 10px; }
 h2 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+.sticky-title {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: #fff;
+  padding: 6px 0;
+  margin: -6px 0 8px;
+}
+.sticky-title.is-stuck { box-shadow: 0 2px 4px rgba(0,0,0,0.08); }
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+}
+.group-header h2 { margin: 0; flex: 1; }
+.badge-later {
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.group-chevron { flex-shrink: 0; transition: transform 0.2s; }
+.group-card.collapsed .group-chevron { transform: rotate(-90deg); }
+.group-card.collapsed .group-body { display: none; }
+tr.row-unpaid { background: #fff1cd; }
+tr.row-unpaid:nth-child(even) { background: #ffe9b3; }
 label { display: block; margin: 8px 0 4px; font-weight: 600; font-size: 13px; }
 input[type=text], input[type=password], input[type=number], input[type=date], select {
   width: 100%;
@@ -192,6 +224,12 @@ th, td { text-align: left; padding: 6px; border-bottom: 1px solid #eee; font-siz
   max-height: 180px;
   overflow-y: auto;
   z-index: 10;
+}
+.suggestions.floating {
+  position: fixed;
+  right: auto;
+  margin-top: 0;
+  z-index: 300;
 }
 .suggestion-item {
   padding: 10px;
