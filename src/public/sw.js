@@ -39,12 +39,17 @@ self.addEventListener('push', (event) => {
     try { data = { ...data, ...event.data.json() }; } catch (e) { /* ignore malformed payload */ }
   }
   event.waitUntil(
-    self.registration.showNotification(data.title, {
-      body: data.body,
-      icon: '/favicon.svg',
-      badge: '/favicon.svg',
-      data: { url: data.url || '/admin' },
-    })
+    Promise.all([
+      self.registration.showNotification(data.title, {
+        body: data.body,
+        icon: '/favicon.svg',
+        badge: '/favicon.svg',
+        data: { url: data.url || '/admin' },
+      }),
+      self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
+        clients.forEach((client) => client.postMessage({ type: 'new-notification' }));
+      }),
+    ])
   );
 });
 

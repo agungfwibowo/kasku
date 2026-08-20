@@ -2,11 +2,11 @@
 <%- include('../partials/topbar') %>
 <div class="container">
   <div class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+    <div style="display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:12px;">
       <h1 style="margin-bottom:0;">Semua Notifikasi</h1>
       <div id="headerAction">
         <% if (unreadCount > 0) { %>
-          <button type="button" id="markAllBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px;">
+          <button type="button" id="markAllBtn" class="link-btn">
             <i data-lucide="check-check"></i> Tandai semua dibaca
           </button>
         <% } else { %>
@@ -130,7 +130,7 @@
 
   function renderHeaderAction(unreadCount) {
     if (unreadCount > 0) {
-      headerAction.innerHTML = '<button type="button" id="markAllBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px;"><i data-lucide="check-check"></i> Tandai semua dibaca</button>';
+      headerAction.innerHTML = '<button type="button" id="markAllBtn" class="link-btn"><i data-lucide="check-check"></i> Tandai semua dibaca</button>';
     } else {
       headerAction.innerHTML = '<span class="muted">Semua sudah dibaca</span>';
     }
@@ -172,6 +172,7 @@
   function refreshBulkBar() {
     const checked = selectedIds();
     bulkBar.classList.toggle('open', checked.length > 0);
+    document.body.classList.toggle('has-bulk-bar', checked.length > 0);
     bulkCount.textContent = checked.length + ' dipilih';
   }
 
@@ -245,6 +246,12 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') refreshNow();
   });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'new-notification') refreshNow();
+    });
+  }
 </script>
 </body>
 </html>

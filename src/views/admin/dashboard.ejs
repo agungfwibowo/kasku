@@ -30,10 +30,16 @@
         </div>
         <img src="/admin/codes/<%= codeItem.id %>/barcode.png" alt="QR code" style="height: 70px;">
       </div>
-      <button type="button" onclick="openEditCode('<%= codeItem.id %>', '<%= codeItem.productId %>')">Ubah</button>
-      <button type="button" class="secondary" onclick="printCode('<%= codeItem.id %>', '<%= codeItem.code %>')">Print</button>
+      <button type="button" onclick="openEditCode('<%= codeItem.id %>', '<%= codeItem.productId %>')" style="display:inline-flex; align-items:center; gap:6px;">
+        <i data-lucide="pencil"></i> Ubah
+      </button>
+      <button type="button" class="secondary" onclick="printCode('<%= codeItem.id %>', '<%= codeItem.code %>')" style="display:inline-flex; align-items:center; gap:6px;">
+        <i data-lucide="printer"></i> Print
+      </button>
       <form method="POST" action="/admin/codes/<%= codeItem.id %>/delete" style="display:inline" onsubmit="return confirmSubmit(event, 'Hapus gencode ini?', 'shredder');">
-        <button class="danger" type="submit">Hapus</button>
+        <button class="danger" type="submit" style="display:inline-flex; align-items:center; gap:6px;">
+          <i data-lucide="trash-2"></i> Hapus
+        </button>
       </form>
     </div>
   <% }); %>

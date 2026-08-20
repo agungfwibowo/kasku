@@ -98,4 +98,12 @@ function initNotifBell() {
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') loadNotifications(dropdown.classList.contains('open'));
   });
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'new-notification') {
+        loadNotifications(dropdown.classList.contains('open'));
+      }
+    });
+  }
 }

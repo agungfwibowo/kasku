@@ -53,12 +53,12 @@
               <td>
                 <div style="display:flex; align-items:center; gap:6px;">
                   <form method="POST" action="/admin/history/<%= c.id %>/validate" style="margin:0;">
-                    <button type="submit" class="<%= c.validated ? 'success' : 'outline' %>" style="margin:0; padding:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;" title="<%= c.validated ? 'Tervalidasi (klik untuk batalkan)' : 'Belum divalidasi (klik untuk validasi)' %>">
+                    <button type="submit" class="icon-btn<%= c.validated ? ' success' : '' %>" title="<%= c.validated ? 'Tervalidasi (klik untuk batalkan)' : 'Belum divalidasi (klik untuk validasi)' %>">
                       <i data-lucide="<%= c.validated ? 'circle-check' : 'circle' %>"></i>
                     </button>
                   </form>
                   <form method="POST" action="/admin/history/<%= c.id %>/delete" style="margin:0;" onsubmit="return confirmSubmit(event, 'Hapus riwayat ini?', 'shredder');">
-                    <button type="submit" class="danger" style="margin:0; padding:0; width:36px; height:36px; display:flex; align-items:center; justify-content:center;" title="Hapus">
+                    <button type="submit" class="icon-btn danger" title="Hapus">
                       <i data-lucide="trash-2"></i>
                     </button>
                   </form>
@@ -180,6 +180,7 @@
     function refresh() {
       const checked = rowChecks.filter((c) => c.checked);
       bulkBar.classList.toggle('open', checked.length > 0);
+      document.body.classList.toggle('has-bulk-bar', checked.length > 0);
       bulkCount.textContent = checked.length + ' dipilih';
     }
 

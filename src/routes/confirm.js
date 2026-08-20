@@ -111,9 +111,10 @@ router.post('/:code', (req, res) => {
 
   const grandTotal = amountValue + unpaidSettled;
 
+  const statusLabel = statusValue === 'later' ? 'Nanti' : 'Lunas';
   push.notifyAdmins({
     title: 'Konfirmasi Bayar Baru',
-    body: `${contactName} — ${codeItem.label} — Rp${grandTotal.toLocaleString('id-ID')} (${methodLabel(methodValue)})`,
+    body: `${contactName} • ${codeItem.label} • Rp${grandTotal.toLocaleString('id-ID')} (${methodLabel(methodValue)}, ${statusLabel})`,
     url: `/admin/history?highlight=${newConfirmation.id}`,
   }).catch(() => {});
 
