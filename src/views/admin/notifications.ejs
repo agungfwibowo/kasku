@@ -4,59 +4,247 @@
   <div class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
       <h1 style="margin-bottom:0;">Semua Notifikasi</h1>
-      <% if (unreadCount > 0) { %>
-        <button type="button" id="markAllBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px;">
-          <i data-lucide="check-check"></i> Tandai semua dibaca
-        </button>
-      <% } else { %>
-        <span class="muted">Semua sudah dibaca</span>
-      <% } %>
+      <div id="headerAction">
+        <% if (unreadCount > 0) { %>
+          <button type="button" id="markAllBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px;">
+            <i data-lucide="check-check"></i> Tandai semua dibaca
+          </button>
+        <% } else { %>
+          <span class="muted">Semua sudah dibaca</span>
+        <% } %>
+      </div>
     </div>
   </div>
 
-  <% if (groups.length === 0) { %>
-    <div class="card notif-empty" style="padding:40px 16px;">
-      <i data-lucide="inbox"></i>
-      <p>Belum ada notifikasi</p>
-    </div>
-  <% } else { %>
-    <% groups.forEach(function(group) { %>
-      <div class="card" style="padding:0;">
-        <div class="notif-day-header"><%= group.label %></div>
-        <div class="notifPageList">
-          <% group.items.forEach(function(n) { %>
-            <div class="notif-item<%= n.read ? '' : ' unread' %>" data-id="<%= n.id %>" data-url="<%= n.url %>">
-              <div class="notif-item-title"><%= n.title %></div>
-              <div class="notif-item-body"><%= n.body %></div>
-              <div class="notif-item-time"><%= new Date(n.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) %></div>
-            </div>
-          <% }); %>
-        </div>
+  <div id="notifGroupsWrap">
+    <% if (groups.length === 0) { %>
+      <div class="card notif-empty" style="padding:40px 16px;">
+        <i data-lucide="inbox"></i>
+        <p>Belum ada notifikasi</p>
       </div>
-    <% }); %>
-  <% } %>
+    <% } else { %>
+      <% groups.forEach(function(group) { %>
+        <div class="card" style="padding:0;">
+          <div class="notif-day-header">
+            <label style="display:flex; align-items:center; gap:8px; font-weight:700; cursor:pointer;">
+              <input type="checkbox" class="select-group">
+              <%= group.label %>
+            </label>
+          </div>
+          <div class="notifPageList">
+            <% group.items.forEach(function(n) { %>
+              <div class="notif-item<%= n.read ? '' : ' unread' %>" data-url="<%= n.url %>" style="display:flex; align-items:flex-start; gap:10px;">
+                <input type="checkbox" class="row-check" value="<%= n.id %>" style="margin-top:3px; flex-shrink:0;">
+                <div class="notif-item-content" data-id="<%= n.id %>" style="flex:1; min-width:0; cursor:pointer;">
+                  <div class="notif-item-title"><%= n.title %></div>
+                  <div class="notif-item-body"><%= n.body %></div>
+                  <div class="notif-item-time"><%= new Date(n.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) %></div>
+                </div>
+                <button type="button" class="notif-delete-btn" data-id="<%= n.id %>" title="Hapus" aria-label="Hapus">
+                  <i data-lucide="trash-2"></i>
+                </button>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+      <% }); %>
+    <% } %>
+  </div>
+</div>
+
+<div class="bulk-bar" id="bulkBar">
+  <span id="bulkCount" class="muted">0 dipilih</span>
+  <div style="display:flex; gap:8px;">
+    <button type="button" id="bulkReadBtn" class="success" style="margin:0;">
+      <i data-lucide="check-check"></i> Tandai Dibaca
+    </button>
+    <button type="button" id="bulkDeleteBtn" class="danger" style="margin:0;">
+      <i data-lucide="trash-2"></i> Hapus
+    </button>
+  </div>
 </div>
 <script>
   if (window.lucide) lucide.createIcons();
 
-  document.querySelector('.container').addEventListener('click', function (e) {
-    const item = e.target.closest('.notif-item');
-    if (!item) return;
-    const id = item.dataset.id;
-    const url = item.dataset.url;
-    fetch('/admin/notifications/' + id + '/read', { method: 'POST' }).finally(function () {
-      window.location.href = url;
+  const container = document.querySelector('.container');
+  const groupsWrap = document.getElementById('notifGroupsWrap');
+  const headerAction = document.getElementById('headerAction');
+  const bulkBar = document.getElementById('bulkBar');
+  const bulkCount = document.getElementById('bulkCount');
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function dayLabel(ts) {
+    const startOfDay = function (d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); };
+    const diffDays = Math.round((startOfDay(new Date()) - startOfDay(new Date(ts))) / 86400000);
+    if (diffDays === 0) return 'Hari ini';
+    if (diffDays === 1) return 'Kemarin';
+    return new Date(ts).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+  }
+
+  function groupByDay(items) {
+    const groups = [];
+    items.forEach(function (n) {
+      const label = dayLabel(n.createdAt);
+      let group = groups.find(function (g) { return g.label === label; });
+      if (!group) { group = { label: label, items: [] }; groups.push(group); }
+      group.items.push(n);
+    });
+    return groups;
+  }
+
+  function renderItem(n) {
+    const time = new Date(n.createdAt).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    return '<div class="notif-item' + (n.read ? '' : ' unread') + '" data-url="' + escapeHtml(n.url) + '" style="display:flex; align-items:flex-start; gap:10px;">' +
+      '<input type="checkbox" class="row-check" value="' + n.id + '" style="margin-top:3px; flex-shrink:0;">' +
+      '<div class="notif-item-content" data-id="' + n.id + '" style="flex:1; min-width:0; cursor:pointer;">' +
+      '<div class="notif-item-title">' + escapeHtml(n.title) + '</div>' +
+      '<div class="notif-item-body">' + escapeHtml(n.body) + '</div>' +
+      '<div class="notif-item-time">' + time + '</div>' +
+      '</div>' +
+      '<button type="button" class="notif-delete-btn" data-id="' + n.id + '" title="Hapus" aria-label="Hapus"><i data-lucide="trash-2"></i></button>' +
+      '</div>';
+  }
+
+  function renderGroups(items) {
+    if (!items.length) {
+      groupsWrap.innerHTML = '<div class="card notif-empty" style="padding:40px 16px;"><i data-lucide="inbox"></i><p>Belum ada notifikasi</p></div>';
+    } else {
+      const groups = groupByDay(items);
+      groupsWrap.innerHTML = groups.map(function (group) {
+        return '<div class="card" style="padding:0;">' +
+          '<div class="notif-day-header"><label style="display:flex; align-items:center; gap:8px; font-weight:700; cursor:pointer;">' +
+          '<input type="checkbox" class="select-group"> ' + escapeHtml(group.label) + '</label></div>' +
+          '<div class="notifPageList">' + group.items.map(renderItem).join('') + '</div>' +
+          '</div>';
+      }).join('');
+    }
+    if (window.lucide) lucide.createIcons();
+    setupStickyHeaders();
+    refreshBulkBar();
+  }
+
+  function renderHeaderAction(unreadCount) {
+    if (unreadCount > 0) {
+      headerAction.innerHTML = '<button type="button" id="markAllBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px;"><i data-lucide="check-check"></i> Tandai semua dibaca</button>';
+    } else {
+      headerAction.innerHTML = '<span class="muted">Semua sudah dibaca</span>';
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  container.addEventListener('click', function (e) {
+    const content = e.target.closest('.notif-item-content');
+    if (content) {
+      const id = content.dataset.id;
+      const url = content.closest('.notif-item').dataset.url;
+      fetch('/admin/notifications/' + id + '/read', { method: 'POST' }).finally(function () {
+        window.location.href = url;
+      });
+      return;
+    }
+
+    const delBtn = e.target.closest('.notif-delete-btn');
+    if (delBtn) {
+      customConfirm('Hapus notifikasi ini?', 'shredder').then(function (ok) {
+        if (!ok) return;
+        fetch('/admin/notifications/' + delBtn.dataset.id + '/delete', { method: 'POST' }).then(function () {
+          delBtn.closest('.notif-item').remove();
+        });
+      });
+      return;
+    }
+
+    const markAllBtn = e.target.closest('#markAllBtn');
+    if (markAllBtn) {
+      fetch('/admin/notifications/read-all', { method: 'POST' }).then(refreshNow);
+    }
+  });
+
+  function selectedIds() {
+    return Array.from(document.querySelectorAll('.row-check')).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+  }
+
+  function refreshBulkBar() {
+    const checked = selectedIds();
+    bulkBar.classList.toggle('open', checked.length > 0);
+    bulkCount.textContent = checked.length + ' dipilih';
+  }
+
+  groupsWrap.addEventListener('change', function (e) {
+    if (e.target.classList.contains('row-check')) {
+      refreshBulkBar();
+    } else if (e.target.classList.contains('select-group')) {
+      const card = e.target.closest('.card');
+      card.querySelectorAll('.row-check').forEach(function (c) { c.checked = e.target.checked; });
+      refreshBulkBar();
+    }
+  });
+  groupsWrap.addEventListener('click', function (e) {
+    if (e.target.classList.contains('row-check') || e.target.classList.contains('select-group')) {
+      e.stopPropagation();
+    }
+  });
+
+  document.getElementById('bulkReadBtn').addEventListener('click', function () {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    fetch('/admin/notifications/bulk-read', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids }),
+    }).then(refreshNow);
+  });
+
+  document.getElementById('bulkDeleteBtn').addEventListener('click', function () {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    customConfirm('Hapus ' + ids.length + ' notifikasi terpilih?', 'shredder').then(function (ok) {
+      if (!ok) return;
+      fetch('/admin/notifications/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids }),
+      }).then(refreshNow);
     });
   });
 
-  const markAllBtn = document.getElementById('markAllBtn');
-  if (markAllBtn) {
-    markAllBtn.addEventListener('click', function () {
-      fetch('/admin/notifications/read-all', { method: 'POST' }).then(function () {
-        window.location.reload();
-      });
+  function setupStickyHeaders() {
+    if (!('IntersectionObserver' in window)) return;
+    document.querySelectorAll('.notif-day-header').forEach(function (header) {
+      if (header.dataset.observed) return;
+      header.dataset.observed = '1';
+      const sentinel = document.createElement('div');
+      header.parentNode.insertBefore(sentinel, header);
+      const observer = new IntersectionObserver(function (entries) {
+        header.classList.toggle('is-stuck', !entries[0].isIntersecting);
+      }, { threshold: 1 });
+      observer.observe(sentinel);
     });
   }
+  setupStickyHeaders();
+
+  let lastIds = <%- JSON.stringify(groups.flatMap(function (g) { return g.items.map(function (n) { return n.id + ':' + n.read; }); })) %>.join(',');
+
+  async function refreshNow() {
+    const res = await fetch('/admin/notifications', { headers: { Accept: 'application/json' } });
+    const data = await res.json();
+    const currentIds = data.items.map(function (n) { return n.id + ':' + n.read; }).join(',');
+    if (currentIds !== lastIds) {
+      lastIds = currentIds;
+      renderGroups(data.items);
+      renderHeaderAction(data.unreadCount);
+    }
+  }
+
+  setInterval(refreshNow, 20000);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') refreshNow();
+  });
 </script>
 </body>
 </html>

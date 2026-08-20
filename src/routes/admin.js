@@ -227,6 +227,21 @@ router.post('/notifications/read-all', (req, res) => {
   res.status(204).end();
 });
 
+router.post('/notifications/:id/delete', (req, res) => {
+  notifications.remove(req.params.id);
+  res.status(204).end();
+});
+
+router.post('/notifications/bulk-read', express.json(), (req, res) => {
+  notifications.markManyRead([].concat(req.body.ids || []));
+  res.status(204).end();
+});
+
+router.post('/notifications/bulk-delete', express.json(), (req, res) => {
+  notifications.removeMany([].concat(req.body.ids || []));
+  res.status(204).end();
+});
+
 router.get('/history', (req, res) => {
   const { from, to, label, method, status, validated, q } = req.query;
   let confirmations = store.readAll('confirmations').sort((a, b) => b.createdAt - a.createdAt);

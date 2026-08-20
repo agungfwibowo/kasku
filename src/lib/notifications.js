@@ -32,4 +32,20 @@ function markAllRead() {
   store.writeAll('notifications', items);
 }
 
-module.exports = { record, list, unreadCount, markRead, markAllRead };
+function markManyRead(ids) {
+  const idSet = new Set(ids);
+  const items = store.readAll('notifications').map((n) => (idSet.has(n.id) ? { ...n, read: true } : n));
+  store.writeAll('notifications', items);
+}
+
+function remove(id) {
+  store.remove('notifications', id);
+}
+
+function removeMany(ids) {
+  const idSet = new Set(ids);
+  const items = store.readAll('notifications').filter((n) => !idSet.has(n.id));
+  store.writeAll('notifications', items);
+}
+
+module.exports = { record, list, unreadCount, markRead, markAllRead, markManyRead, remove, removeMany };

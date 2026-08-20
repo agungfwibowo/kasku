@@ -40,7 +40,8 @@
       </div>
     </div>
 
-    <% if (typeof waUrl !== 'undefined' && waUrl) { %>
+    <% /* Tombol WA disembunyikan sementara */ %>
+    <% if (false && typeof waUrl !== 'undefined' && waUrl) { %>
       <a href="<%= waUrl %>" target="_blank" id="waLink" class="btn success" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px; margin-top: 20px;">
         <i data-lucide="message-circle"></i> Buka WhatsApp
       </a>
