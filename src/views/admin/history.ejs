@@ -16,6 +16,18 @@
       <div class="group-header sticky-title">
         <h2><%= group.label %></h2>
         <% if (belumLunas > 0) { %><span class="badge-later"><%= belumLunas %> belum lunas</span><% } %>
+        <button type="button" class="icon-btn copy-group-btn" title="Copy untuk Excel" data-rows='<%- JSON.stringify(group.items.map(function(c) {
+          return [
+            new Date(c.createdAt).toLocaleString("id-ID"),
+            c.contactName,
+            c.qty || 1,
+            Number(c.amount || 0),
+            c.method === "tf" ? "Transfer" : (c.method === "qris" ? "QRIS" : "Cash"),
+            (c.status || "lunas") === "later" ? "Bayar Nanti" : "Lunas",
+          ];
+        })).replace(/'/g, "&#39;") %>'>
+          <i data-lucide="clipboard-copy"></i>
+        </button>
         <i data-lucide="chevron-down" class="group-chevron"></i>
       </div>
       <div class="group-body" style="overflow-x:auto;">
@@ -222,6 +234,44 @@
     document.querySelectorAll('.group-header').forEach(function (header) {
       header.addEventListener('click', function () {
         header.closest('.group-card').classList.toggle('collapsed');
+      });
+    });
+
+    let toastTimer = null;
+    function showToast(message, isError) {
+      let toast = document.getElementById('copyToast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'copyToast';
+        toast.className = 'floating-toast';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = message;
+      toast.classList.toggle('error', Boolean(isError));
+      toast.classList.add('open');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(function () { toast.classList.remove('open'); }, 2200);
+    }
+
+    document.querySelectorAll('.copy-group-btn').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        const rows = JSON.parse(btn.dataset.rows);
+        const header = ['Waktu', 'Nama', 'Jumlah', 'Total', 'Metode', 'Status'];
+        const tsv = [header].concat(rows).map(function (row) { return row.join('\t'); }).join('\n');
+        navigator.clipboard.writeText(tsv).then(function () {
+          btn.innerHTML = '<i data-lucide="check"></i>';
+          btn.classList.add('success');
+          if (window.lucide) lucide.createIcons();
+          setTimeout(function () {
+            btn.innerHTML = '<i data-lucide="clipboard-copy"></i>';
+            btn.classList.remove('success');
+            if (window.lucide) lucide.createIcons();
+          }, 1500);
+          showToast('Disalin — siap ditempel ke Excel');
+        }).catch(function () {
+          showToast('Gagal menyalin ke clipboard', true);
+        });
       });
     });
 
