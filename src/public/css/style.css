@@ -674,6 +674,36 @@ body.has-bulk-bar .container { padding-bottom: 90px; transition: padding-bottom 
 .legal-page ul { margin: 0; padding-left: 20px; }
 .legal-page li { margin-bottom: 10px; font-size: 14px; line-height: 1.5; color: #333; }
 
+.legal-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #555;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.legal-back-link:hover { color: #1a1a1a; }
+.legal-back-link .lucide { width: 15px; height: 15px; }
+.legal-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #e2e2e2;
+}
+.legal-tabs a {
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #666;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.legal-tabs a:hover { color: #1a1a1a; }
+.legal-tabs a.active { color: #2952e3; border-bottom-color: #2952e3; }
+
 .empty-state { text-align: center; padding: 22px 16px; color: #888; }
 .empty-state .lucide { width: 30px; height: 30px; color: #c7cbe0; margin-bottom: 8px; }
 .empty-state p { margin: 4px 0; }

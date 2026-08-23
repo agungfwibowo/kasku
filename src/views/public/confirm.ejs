@@ -285,6 +285,17 @@
       nameInput.focus();
     });
   });
+
+  const confirmForm = document.getElementById('confirmForm');
+  confirmForm.addEventListener('submit', function (e) {
+    if (confirmForm.dataset.submitting) {
+      e.preventDefault();
+      return;
+    }
+    confirmForm.dataset.submitting = '1';
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Memproses...';
+  });
 </script>
 </body>
 </html>

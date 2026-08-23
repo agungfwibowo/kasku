@@ -2,49 +2,63 @@ const store = require('./store');
 
 const MAX_STORED = 50;
 
-function record({ title, body, url }) {
+function record({ title, body, url, ownerId }) {
   const items = store.readAll('notifications');
   items.unshift({
     id: require('crypto').randomUUID(),
+    ownerId,
     title,
     body,
     url: url || '/admin',
     read: false,
     createdAt: Date.now(),
   });
-  store.writeAll('notifications', items.slice(0, MAX_STORED));
+  const kept = items.filter((n) => n.ownerId === ownerId).slice(0, MAX_STORED);
+  const others = items.filter((n) => n.ownerId !== ownerId);
+  store.writeAll('notifications', [...kept, ...others]);
 }
 
-function list() {
-  return store.readAll('notifications').sort((a, b) => b.createdAt - a.createdAt);
+function list(ownerId) {
+  return store
+    .readAll('notifications')
+    .filter((n) => n.ownerId === ownerId)
+    .sort((a, b) => b.createdAt - a.createdAt);
 }
 
-function unreadCount() {
-  return store.readAll('notifications').filter((n) => !n.read).length;
+function unreadCount(ownerId) {
+  return store.readAll('notifications').filter((n) => n.ownerId === ownerId && !n.read).length;
 }
 
-function markRead(id) {
-  store.update('notifications', id, { read: true });
+function markRead(id, ownerId) {
+  const item = store.findById('notifications', id);
+  if (item && item.ownerId === ownerId) {
+    store.update('notifications', id, { read: true });
+  }
 }
 
-function markAllRead() {
-  const items = store.readAll('notifications').map((n) => ({ ...n, read: true }));
+function markAllRead(ownerId) {
+  const items = store.readAll('notifications').map((n) => (n.ownerId === ownerId ? { ...n, read: true } : n));
   store.writeAll('notifications', items);
 }
 
-function markManyRead(ids) {
+function markManyRead(ids, ownerId) {
   const idSet = new Set(ids);
-  const items = store.readAll('notifications').map((n) => (idSet.has(n.id) ? { ...n, read: true } : n));
+  const items = store.readAll('notifications').map((n) =>
+    idSet.has(n.id) && n.ownerId === ownerId ? { ...n, read: true } : n
+  );
   store.writeAll('notifications', items);
 }
 
-function remove(id) {
-  store.remove('notifications', id);
+function remove(id, ownerId) {
+  const item = store.findById('notifications', id);
+  if (item && item.ownerId === ownerId) {
+    store.remove('notifications', id);
+  }
 }
 
-function removeMany(ids) {
+function removeMany(ids, ownerId) {
   const idSet = new Set(ids);
-  const items = store.readAll('notifications').filter((n) => !idSet.has(n.id));
+  const items = store.readAll('notifications').filter((n) => !(idSet.has(n.id) && n.ownerId === ownerId));
   store.writeAll('notifications', items);
 }
 

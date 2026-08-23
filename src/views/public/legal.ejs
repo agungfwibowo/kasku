@@ -1,10 +1,21 @@
 <%- include('../partials/head') %>
 <%- include('../partials/public-header') %>
 <div class="container">
+  <a href="/login" class="legal-back-link">
+    <i data-lucide="arrow-left"></i> Kembali ke Login
+  </a>
+  <div class="legal-tabs">
+    <% tabs.forEach(function(tab) { %>
+      <a href="/legal/<%= tab.slug %>" class="<%= tab.slug === slug ? 'active' : '' %>"><%= tab.title %></a>
+    <% }); %>
+  </div>
   <div class="card legal-page">
     <h1><%= title %></h1>
     <%- body %>
   </div>
 </div>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
 </body>
 </html>

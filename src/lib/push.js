@@ -10,11 +10,11 @@ if (enabled) {
   webpush.setVapidDetails('mailto:admin@kasku.local', publicKey, privateKey);
 }
 
-function subscribe(subscription) {
+function subscribe(ownerId, subscription) {
   const subs = store.readAll('push-subscriptions');
   const exists = subs.some((s) => s.endpoint === subscription.endpoint);
   if (!exists) {
-    store.insert('push-subscriptions', subscription);
+    store.insert('push-subscriptions', { ownerId, ...subscription });
   }
 }
 
@@ -23,11 +23,11 @@ function unsubscribe(endpoint) {
   store.writeAll('push-subscriptions', subs.filter((s) => s.endpoint !== endpoint));
 }
 
-async function notifyAdmins(payload) {
-  notifications.record(payload);
+async function notifyAdmins(ownerId, payload) {
+  notifications.record({ ...payload, ownerId });
 
   if (!enabled) return;
-  const subs = store.readAll('push-subscriptions');
+  const subs = store.readAll('push-subscriptions').filter((s) => s.ownerId === ownerId);
   const body = JSON.stringify(payload);
 
   await Promise.all(

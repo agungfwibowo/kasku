@@ -1,0 +1,37 @@
+<%- include('../partials/head') %>
+<%- include('../partials/topbar') %>
+<div class="container">
+  <div class="card">
+    <h1>Kelola Admin</h1>
+    <p class="muted" style="margin-top:0;">Setiap admin punya data gencode, produk, kontak, dan riwayat sendiri-sendiri (terpisah).</p>
+    <form method="POST" action="/admin/admins">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" placeholder="mis. kasir1" required>
+      <label for="name">Nama tampilan (opsional)</label>
+      <input type="text" id="name" name="name" placeholder="mis. Kasir Toko A">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="minimal 6 karakter" required minlength="6">
+      <% if (error) { %><div class="error"><%= error %></div><% } %>
+      <button type="submit">+ Tambah Admin</button>
+    </form>
+  </div>
+  <div class="card">
+    <% admins.forEach(function(admin) { %>
+      <div class="list-item">
+        <span><%= admin.name %> <span class="muted">(<%= admin.username %>)</span></span>
+        <% if (admin.id !== currentAdmin.id) { %>
+          <form method="POST" action="/admin/admins/<%= admin.id %>/delete" onsubmit="return confirmSubmit(event, 'Hapus admin ' + <%- JSON.stringify(admin.username) %> + '? Data miliknya tidak akan terhapus.', 'shredder');">
+            <button type="submit" class="danger-text"><i data-lucide="trash-2"></i> Hapus</button>
+          </form>
+        <% } else { %>
+          <span class="muted" style="font-size:12px;">Anda</span>
+        <% } %>
+      </div>
+    <% }); %>
+  </div>
+</div>
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>
+</body>
+</html>

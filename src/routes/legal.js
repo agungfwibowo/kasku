@@ -42,10 +42,13 @@ const pages = {
   },
 };
 
+const order = ['terms', 'security', 'privacy'];
+
 router.get('/:page', (req, res, next) => {
   const page = pages[req.params.page];
   if (!page) return next();
-  res.render('public/legal', { title: page.title, body: page.body });
+  const tabs = order.map((slug) => ({ slug, title: pages[slug].title }));
+  res.render('public/legal', { title: page.title, body: page.body, slug: req.params.page, tabs });
 });
 
 module.exports = router;

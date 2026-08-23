@@ -1,4 +1,5 @@
 const express = require('express');
+const { verifyPassword, findAdminByUsername } = require('../lib/auth');
 
 const router = express.Router();
 
@@ -7,12 +8,13 @@ router.get('/login', (req, res) => {
 });
 
 router.post('/login', (req, res) => {
-  const { password, next } = req.body;
-  if (password === process.env.ADMIN_PASSWORD) {
-    req.session.isAdmin = true;
+  const { username, password, next } = req.body;
+  const admin = findAdminByUsername((username || '').trim());
+  if (admin && verifyPassword(password, admin.salt, admin.hash)) {
+    req.session.adminId = admin.id;
     return res.redirect(next || '/admin');
   }
-  res.render('login', { error: 'Password salah', next: next || '/admin' });
+  res.render('login', { error: 'Username atau password salah', next: next || '/admin' });
 });
 
 router.post('/logout', (req, res) => {

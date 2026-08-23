@@ -5,94 +5,85 @@
     <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
       <h1 style="margin-bottom:0;">Riwayat Konfirmasi Bayar</h1>
       <button type="button" id="openFilterBtn" class="outline" style="margin:0; display:flex; align-items:center; gap:6px; flex-shrink:0;">
-        <i data-lucide="sliders-horizontal"></i> Filter<% if (activeFilterCount > 0) { %> (<%= activeFilterCount %>)<% } %>
+        <i data-lucide="sliders-horizontal"></i> <span id="filterBtnLabel">Filter<% if (activeFilterCount > 0) { %> (<%= activeFilterCount %>)<% } %></span>
       </button>
     </div>
   </div>
 
-  <% groups.forEach(function(group) { %>
-    <% var belumLunas = group.items.filter(function(c) { return c.status === 'later'; }).length; %>
-    <div class="card group-card">
-      <div class="group-header sticky-title">
-        <h2><%= group.label %></h2>
-        <% if (belumLunas > 0) { %><span class="badge-later"><%= belumLunas %> belum lunas</span><% } %>
-        <button type="button" class="icon-btn copy-group-btn" title="Copy untuk Excel" data-rows='<%- JSON.stringify(group.items.map(function(c) {
-          return [
-            new Date(c.createdAt).toLocaleString("id-ID"),
-            c.contactName,
-            c.qty || 1,
-            Number(c.amount || 0),
-            c.method === "tf" ? "Transfer" : (c.method === "qris" ? "QRIS" : "Cash"),
-            (c.status || "lunas") === "later" ? "Bayar Nanti" : "Lunas",
-          ];
-        })).replace(/'/g, "&#39;") %>'>
-          <i data-lucide="clipboard-copy"></i>
-        </button>
-        <i data-lucide="chevron-down" class="group-chevron"></i>
-      </div>
-      <div class="group-body" style="overflow-x:auto;">
-      <table>
-        <thead>
-          <tr><th style="width:32px;"><input type="checkbox" class="select-group"></th><th>Waktu</th><th>Nama</th><th>Jumlah</th><th>Total</th><th>Metode</th><th>Status</th><th>Validasi</th></tr>
-        </thead>
-        <tbody>
-          <% group.items.forEach(function(c) { %>
-            <tr id="row-<%= c.id %>" class="<%= c.status === 'later' ? 'row-unpaid' : '' %>">
-              <td><input type="checkbox" value="<%= c.id %>" class="row-check"></td>
-              <td><%= new Date(c.createdAt).toLocaleString('id-ID') %></td>
-              <td><%= c.contactName %></td>
-              <td><%= c.qty || 1 %></td>
-              <td title="Rp<%= Number(c.amount || 0).toLocaleString('id-ID') %>">Rp<%= formatRupiah(c.amount) %></td>
-              <td>
-                <form method="POST" action="/admin/history/<%= c.id %>/update" style="margin:0;">
-                  <input type="hidden" name="status" value="<%= c.status || 'lunas' %>">
-                  <select name="method" onchange="this.form.submit()" style="width:auto; padding:4px; font-size:13px;">
+  <div id="historyGroupsWrap">
+    <% groups.forEach(function(group) { %>
+      <% var belumLunas = group.items.filter(function(c) { return c.status === 'later'; }).length; %>
+      <div class="card group-card">
+        <div class="group-header sticky-title">
+          <h2><%= group.label %></h2>
+          <% if (belumLunas > 0) { %><span class="badge-later"><%= belumLunas %> belum lunas</span><% } %>
+          <button type="button" class="icon-btn copy-group-btn" title="Copy untuk Excel" data-rows='<%- JSON.stringify(group.items.map(function(c) {
+            return [
+              new Date(c.createdAt).toLocaleString("id-ID"),
+              c.contactName,
+              c.qty || 1,
+              Number(c.amount || 0),
+              c.method === "tf" ? "Transfer" : (c.method === "qris" ? "QRIS" : "Cash"),
+              (c.status || "lunas") === "later" ? "Bayar Nanti" : "Lunas",
+            ];
+          })).replace(/'/g, "&#39;") %>'>
+            <i data-lucide="clipboard-copy"></i>
+          </button>
+          <i data-lucide="chevron-down" class="group-chevron"></i>
+        </div>
+        <div class="group-body" style="overflow-x:auto;">
+        <table>
+          <thead>
+            <tr><th style="width:32px;"><input type="checkbox" class="select-group"></th><th>Waktu</th><th>Nama</th><th>Jumlah</th><th>Total</th><th>Metode</th><th>Status</th><th>Validasi</th></tr>
+          </thead>
+          <tbody>
+            <% group.items.forEach(function(c) { %>
+              <tr id="row-<%= c.id %>" class="<%= c.status === 'later' ? 'row-unpaid' : '' %>">
+                <td><input type="checkbox" value="<%= c.id %>" class="row-check"></td>
+                <td><%= new Date(c.createdAt).toLocaleString('id-ID') %></td>
+                <td><%= c.contactName %></td>
+                <td><%= c.qty || 1 %></td>
+                <td title="Rp<%= Number(c.amount || 0).toLocaleString('id-ID') %>">Rp<%= formatRupiah(c.amount) %></td>
+                <td>
+                  <select class="method-select" data-id="<%= c.id %>" style="width:auto; padding:4px; font-size:13px;">
                     <option value="cash" <%= c.method === 'cash' ? 'selected' : '' %>>Cash</option>
                     <option value="tf" <%= c.method === 'tf' ? 'selected' : '' %>>Transfer</option>
                     <option value="qris" <%= c.method === 'qris' ? 'selected' : '' %>>QRIS</option>
                   </select>
-                </form>
-              </td>
-              <td>
-                <form method="POST" action="/admin/history/<%= c.id %>/update" style="margin:0;">
-                  <input type="hidden" name="method" value="<%= c.method %>">
-                  <select name="status" onchange="this.form.submit()" style="width:auto; padding:4px; font-size:13px;">
+                </td>
+                <td>
+                  <select class="status-select" data-id="<%= c.id %>" style="width:auto; padding:4px; font-size:13px;">
                     <option value="lunas" <%= (c.status || 'lunas') === 'lunas' ? 'selected' : '' %>>Lunas</option>
                     <option value="later" <%= c.status === 'later' ? 'selected' : '' %>>Bayar Nanti</option>
                   </select>
-                </form>
-              </td>
-              <td>
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <form method="POST" action="/admin/history/<%= c.id %>/validate" style="margin:0;">
-                    <button type="submit" class="icon-btn<%= c.validated ? ' success' : '' %>" title="<%= c.validated ? 'Tervalidasi (klik untuk batalkan)' : 'Belum divalidasi (klik untuk validasi)' %>">
+                </td>
+                <td>
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <button type="button" class="icon-btn validate-btn<%= c.validated ? ' success' : '' %>" data-id="<%= c.id %>" title="<%= c.validated ? 'Tervalidasi (klik untuk batalkan)' : 'Belum divalidasi (klik untuk validasi)' %>">
                       <i data-lucide="<%= c.validated ? 'circle-check' : 'circle' %>"></i>
                     </button>
-                  </form>
-                  <form method="POST" action="/admin/history/<%= c.id %>/delete" style="margin:0;" onsubmit="return confirmSubmit(event, 'Hapus riwayat ini?', 'shredder');">
-                    <button type="submit" class="icon-btn danger" title="Hapus">
+                    <button type="button" class="icon-btn danger delete-row-btn" data-id="<%= c.id %>" title="Hapus">
                       <i data-lucide="trash-2"></i>
                     </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-          <% }); %>
-        </tbody>
-      </table>
+                  </div>
+                </td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+        </div>
       </div>
-    </div>
-  <% }); %>
+    <% }); %>
 
-  <% if (groups.length === 0) { %>
-    <div class="card empty-state">
-      <i data-lucide="history"></i>
-      <p>Tidak ada riwayat yang cocok.</p>
-    </div>
-  <% } %>
+    <% if (groups.length === 0) { %>
+      <div class="card empty-state">
+        <i data-lucide="history"></i>
+        <p>Tidak ada riwayat yang cocok.</p>
+      </div>
+    <% } %>
+  </div>
 </div>
 
-<form id="bulkForm" method="POST" style="display:none;"></form>
 <div class="bulk-bar" id="bulkBar">
   <span id="bulkCount" class="muted">0 dipilih</span>
   <div style="display:flex; gap:8px;">
@@ -113,7 +104,7 @@
         <i data-lucide="x"></i>
       </button>
     </div>
-    <form method="GET" action="/admin/history" style="display:flex; flex-wrap:wrap; gap:12px;">
+    <form id="filterForm" style="display:flex; flex-wrap:wrap; gap:12px;">
       <div style="flex:1; min-width:130px;">
         <label for="from">Dari Tanggal</label>
         <input type="date" id="from" name="from" value="<%= filters.from %>">
@@ -162,7 +153,7 @@
       </div>
       <div style="width:100%; display:flex; gap:10px; margin-top:6px;">
         <button type="submit" style="margin:0; flex:1;">Terapkan Filter</button>
-        <a class="btn secondary" href="/admin/history" style="margin:0; flex:1; text-align:center;">Reset</a>
+        <button type="button" id="resetFilterBtn" class="secondary" style="margin:0; flex:1;">Reset</button>
       </div>
     </form>
   </div>
@@ -170,135 +161,317 @@
 
 <script>
   if (window.lucide) lucide.createIcons();
+
+  const groupsWrap = document.getElementById('historyGroupsWrap');
+  const bulkBar = document.getElementById('bulkBar');
+  const bulkCount = document.getElementById('bulkCount');
+  const filterBtnLabel = document.getElementById('filterBtnLabel');
+  const collapsedLabels = new Set();
+
+  function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function methodLabelJs(method) {
+    return method === 'tf' ? 'Transfer' : (method === 'qris' ? 'QRIS' : 'Cash');
+  }
+
+  function formatRupiahJs(amount) {
+    const n = Number(amount) || 0;
+    if (n >= 1000000) return (n / 1000000).toFixed(n % 1000000 === 0 ? 0 : 1) + 'jt';
+    if (n >= 1000) return (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'rb';
+    return String(n);
+  }
+
+  function renderRow(c) {
+    const later = (c.status || 'lunas') === 'later';
+    return '<tr id="row-' + c.id + '"' + (later ? ' class="row-unpaid"' : '') + '>' +
+      '<td><input type="checkbox" value="' + c.id + '" class="row-check"></td>' +
+      '<td>' + new Date(c.createdAt).toLocaleString('id-ID') + '</td>' +
+      '<td>' + escapeHtml(c.contactName) + '</td>' +
+      '<td>' + (c.qty || 1) + '</td>' +
+      '<td title="Rp' + Number(c.amount || 0).toLocaleString('id-ID') + '">Rp' + formatRupiahJs(c.amount) + '</td>' +
+      '<td><select class="method-select" data-id="' + c.id + '" style="width:auto; padding:4px; font-size:13px;">' +
+        '<option value="cash"' + (c.method === 'cash' ? ' selected' : '') + '>Cash</option>' +
+        '<option value="tf"' + (c.method === 'tf' ? ' selected' : '') + '>Transfer</option>' +
+        '<option value="qris"' + (c.method === 'qris' ? ' selected' : '') + '>QRIS</option>' +
+      '</select></td>' +
+      '<td><select class="status-select" data-id="' + c.id + '" style="width:auto; padding:4px; font-size:13px;">' +
+        '<option value="lunas"' + (!later ? ' selected' : '') + '>Lunas</option>' +
+        '<option value="later"' + (later ? ' selected' : '') + '>Bayar Nanti</option>' +
+      '</select></td>' +
+      '<td><div style="display:flex; align-items:center; gap:6px;">' +
+        '<button type="button" class="icon-btn validate-btn' + (c.validated ? ' success' : '') + '" data-id="' + c.id + '" title="' + (c.validated ? 'Tervalidasi (klik untuk batalkan)' : 'Belum divalidasi (klik untuk validasi)') + '"><i data-lucide="' + (c.validated ? 'circle-check' : 'circle') + '"></i></button>' +
+        '<button type="button" class="icon-btn danger delete-row-btn" data-id="' + c.id + '" title="Hapus"><i data-lucide="trash-2"></i></button>' +
+      '</div></td>' +
+    '</tr>';
+  }
+
+  function renderGroups(groups) {
+    if (!groups.length) {
+      groupsWrap.innerHTML = '<div class="card empty-state"><i data-lucide="history"></i><p>Tidak ada riwayat yang cocok.</p></div>';
+      if (window.lucide) lucide.createIcons();
+      setupStickyHeaders();
+      refreshBulkBar();
+      return;
+    }
+    groupsWrap.innerHTML = groups.map(function (group) {
+      const belumLunas = group.items.filter(function (c) { return c.status === 'later'; }).length;
+      const rowsHtml = group.items.map(renderRow).join('');
+      const copyRows = group.items.map(function (c) {
+        return [
+          new Date(c.createdAt).toLocaleString('id-ID'),
+          c.contactName,
+          c.qty || 1,
+          Number(c.amount || 0),
+          methodLabelJs(c.method),
+          (c.status || 'lunas') === 'later' ? 'Bayar Nanti' : 'Lunas',
+        ];
+      });
+      const collapsedClass = collapsedLabels.has(group.label) ? ' collapsed' : '';
+      return '<div class="card group-card' + collapsedClass + '">' +
+        '<div class="group-header sticky-title">' +
+          '<h2>' + escapeHtml(group.label) + '</h2>' +
+          (belumLunas > 0 ? '<span class="badge-later">' + belumLunas + ' belum lunas</span>' : '') +
+          '<button type="button" class="icon-btn copy-group-btn" title="Copy untuk Excel" data-rows=\'' + JSON.stringify(copyRows).replace(/'/g, '&#39;') + '\'><i data-lucide="clipboard-copy"></i></button>' +
+          '<i data-lucide="chevron-down" class="group-chevron"></i>' +
+        '</div>' +
+        '<div class="group-body" style="overflow-x:auto;"><table>' +
+          '<thead><tr><th style="width:32px;"><input type="checkbox" class="select-group"></th><th>Waktu</th><th>Nama</th><th>Jumlah</th><th>Total</th><th>Metode</th><th>Status</th><th>Validasi</th></tr></thead>' +
+          '<tbody>' + rowsHtml + '</tbody>' +
+        '</table></div>' +
+      '</div>';
+    }).join('');
+    if (window.lucide) lucide.createIcons();
+    setupStickyHeaders();
+    refreshBulkBar();
+  }
+
+  function setupStickyHeaders() {
+    if (!('IntersectionObserver' in window)) return;
+    groupsWrap.querySelectorAll('.sticky-title').forEach(function (title) {
+      if (title.dataset.observed) return;
+      title.dataset.observed = '1';
+      const sentinel = document.createElement('div');
+      title.parentNode.insertBefore(sentinel, title);
+      const observer = new IntersectionObserver(function (entries) {
+        title.classList.toggle('is-stuck', !entries[0].isIntersecting);
+      }, { threshold: 1 });
+      observer.observe(sentinel);
+    });
+  }
+  setupStickyHeaders();
+
+  function refreshBulkBar() {
+    const checked = Array.from(groupsWrap.querySelectorAll('.row-check')).filter(function (c) { return c.checked; });
+    bulkBar.classList.toggle('open', checked.length > 0);
+    document.body.classList.toggle('has-bulk-bar', checked.length > 0);
+    bulkCount.textContent = checked.length + ' dipilih';
+  }
+
+  function selectedIds() {
+    return Array.from(groupsWrap.querySelectorAll('.row-check')).filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+  }
+
+  let lastKey = null;
+
+  async function refreshNow() {
+    const search = window.location.search;
+    const res = await fetch('/admin/history/data' + search, { headers: { Accept: 'application/json' } });
+    const data = await res.json();
+    const key = JSON.stringify(data.groups.flatMap(function (g) {
+      return g.items.map(function (c) { return c.id + ':' + c.method + ':' + c.status + ':' + c.validated; });
+    }));
+    if (key === lastKey) return;
+    lastKey = key;
+    renderGroups(data.groups);
+    filterBtnLabel.textContent = 'Filter' + (data.activeFilterCount > 0 ? ' (' + data.activeFilterCount + ')' : '');
+  }
+  lastKey = JSON.stringify(<%- JSON.stringify(groups).replace(/</g, '\\u003c') %>.flatMap(function (g) {
+    return g.items.map(function (c) { return c.id + ':' + c.method + ':' + c.status + ':' + c.validated; });
+  }));
+
+  groupsWrap.addEventListener('click', function (e) {
+    const header = e.target.closest('.group-header');
+    if (header && !e.target.closest('.copy-group-btn')) {
+      const card = header.closest('.group-card');
+      card.classList.toggle('collapsed');
+      const label = header.querySelector('h2').textContent;
+      if (card.classList.contains('collapsed')) collapsedLabels.add(label);
+      else collapsedLabels.delete(label);
+      return;
+    }
+
+    const copyBtn = e.target.closest('.copy-group-btn');
+    if (copyBtn) {
+      e.stopPropagation();
+      const rows = JSON.parse(copyBtn.dataset.rows);
+      const header2 = ['Waktu', 'Nama', 'Jumlah', 'Total', 'Metode', 'Status'];
+      const tsv = [header2].concat(rows).map(function (row) { return row.join('\t'); }).join('\n');
+      navigator.clipboard.writeText(tsv).then(function () {
+        copyBtn.innerHTML = '<i data-lucide="check"></i>';
+        copyBtn.classList.add('success');
+        if (window.lucide) lucide.createIcons();
+        setTimeout(function () {
+          copyBtn.innerHTML = '<i data-lucide="clipboard-copy"></i>';
+          copyBtn.classList.remove('success');
+          if (window.lucide) lucide.createIcons();
+        }, 1500);
+        showToast('Disalin — siap ditempel ke Excel');
+      }).catch(function () {
+        showToast('Gagal menyalin ke clipboard', true);
+      });
+      return;
+    }
+
+    const validateBtn = e.target.closest('.validate-btn');
+    if (validateBtn) {
+      fetch('/admin/history/' + validateBtn.dataset.id + '/validate', { method: 'POST' }).then(refreshNow);
+      return;
+    }
+
+    const deleteBtn = e.target.closest('.delete-row-btn');
+    if (deleteBtn) {
+      customConfirm('Hapus riwayat ini?', 'shredder').then(function (ok) {
+        if (!ok) return;
+        fetch('/admin/history/' + deleteBtn.dataset.id + '/delete', { method: 'POST' }).then(refreshNow);
+      });
+      return;
+    }
+  });
+
+  groupsWrap.addEventListener('change', function (e) {
+    if (e.target.classList.contains('row-check')) {
+      refreshBulkBar();
+    } else if (e.target.classList.contains('select-group')) {
+      const table = e.target.closest('table');
+      table.querySelectorAll('.row-check').forEach(function (c) { c.checked = e.target.checked; });
+      refreshBulkBar();
+    } else if (e.target.classList.contains('method-select')) {
+      const row = e.target.closest('tr');
+      const status = row.querySelector('.status-select').value;
+      fetch('/admin/history/' + e.target.dataset.id + '/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: e.target.value, status: status }),
+      }).then(refreshNow);
+    } else if (e.target.classList.contains('status-select')) {
+      const row = e.target.closest('tr');
+      const method = row.querySelector('.method-select').value;
+      fetch('/admin/history/' + e.target.dataset.id + '/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ method: method, status: e.target.value }),
+      }).then(refreshNow);
+    }
+  });
+  groupsWrap.addEventListener('click', function (e) {
+    if (e.target.classList.contains('row-check') || e.target.classList.contains('select-group')) {
+      e.stopPropagation();
+    }
+  });
+
+  document.getElementById('bulkValidateBtn').addEventListener('click', function () {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    fetch('/admin/history/bulk-validate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ids }),
+    }).then(refreshNow);
+  });
+  document.getElementById('bulkDeleteBtn').addEventListener('click', function () {
+    const ids = selectedIds();
+    if (!ids.length) return;
+    customConfirm('Hapus ' + ids.length + ' riwayat terpilih?', 'shredder').then(function (ok) {
+      if (!ok) return;
+      fetch('/admin/history/bulk-delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: ids }),
+      }).then(refreshNow);
+    });
+  });
+
+  let toastTimer = null;
+  function showToast(message, isError) {
+    let toast = document.getElementById('copyToast');
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.id = 'copyToast';
+      toast.className = 'floating-toast';
+      document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    toast.classList.toggle('error', Boolean(isError));
+    toast.classList.add('open');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toast.classList.remove('open'); }, 2200);
+  }
+
   (function () {
     const modal = document.getElementById('filterModal');
     const openBtn = document.getElementById('openFilterBtn');
     const closeBtn = document.getElementById('closeFilterBtn');
-    if (!modal || !openBtn) return;
+    const filterForm = document.getElementById('filterForm');
+    const resetBtn = document.getElementById('resetFilterBtn');
     openBtn.addEventListener('click', function () { modal.classList.add('open'); });
     closeBtn.addEventListener('click', function () { modal.classList.remove('open'); });
     modal.addEventListener('click', function (e) {
       if (e.target === modal) modal.classList.remove('open');
     });
+
+    filterForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+      const params = new URLSearchParams();
+      Array.from(filterForm.elements).forEach(function (el) {
+        if (el.name && el.value) params.set(el.name, el.value);
+      });
+      const search = params.toString() ? '?' + params.toString() : '';
+      window.history.replaceState({}, '', '/admin/history' + search);
+      lastKey = null;
+      refreshNow();
+      modal.classList.remove('open');
+    });
+
+    resetBtn.addEventListener('click', function () {
+      Array.from(filterForm.elements).forEach(function (el) {
+        if (el.name) el.value = '';
+      });
+      window.history.replaceState({}, '', '/admin/history');
+      lastKey = null;
+      refreshNow();
+      modal.classList.remove('open');
+    });
   })();
 
+  const POLL_INTERVAL = 20000;
+  setInterval(refreshNow, POLL_INTERVAL);
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') refreshNow();
+  });
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', function (e) {
+      if (e.data && e.data.type === 'new-notification') refreshNow();
+    });
+  }
+
   (function () {
-    const bulkBar = document.getElementById('bulkBar');
-    const bulkCount = document.getElementById('bulkCount');
-    const bulkForm = document.getElementById('bulkForm');
-    const rowChecks = Array.from(document.querySelectorAll('.row-check'));
-    const groupChecks = Array.from(document.querySelectorAll('.select-group'));
-
-    function refresh() {
-      const checked = rowChecks.filter((c) => c.checked);
-      bulkBar.classList.toggle('open', checked.length > 0);
-      document.body.classList.toggle('has-bulk-bar', checked.length > 0);
-      bulkCount.textContent = checked.length + ' dipilih';
-    }
-
-    rowChecks.forEach((c) => c.addEventListener('change', refresh));
-    groupChecks.forEach((groupCheck, i) => {
-      const table = groupCheck.closest('table');
-      groupCheck.addEventListener('change', function () {
-        table.querySelectorAll('.row-check').forEach((c) => { c.checked = groupCheck.checked; });
-        refresh();
-      });
-    });
-
-    function submitBulk(action) {
-      const ids = rowChecks.filter((c) => c.checked).map((c) => c.value);
-      if (!ids.length) return;
-      bulkForm.innerHTML = '';
-      ids.forEach((id) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = 'ids';
-        input.value = id;
-        bulkForm.appendChild(input);
-      });
-      bulkForm.action = action;
-      bulkForm.submit();
-    }
-
-    document.getElementById('bulkValidateBtn').addEventListener('click', function () {
-      submitBulk('/admin/history/bulk-validate');
-    });
-    document.getElementById('bulkDeleteBtn').addEventListener('click', function () {
-      const ids = rowChecks.filter((c) => c.checked).map((c) => c.value);
-      if (!ids.length) return;
-      customConfirm('Hapus ' + ids.length + ' riwayat terpilih?', 'shredder').then(function (ok) {
-        if (ok) submitBulk('/admin/history/bulk-delete');
-      });
-    });
-
-    document.querySelectorAll('.group-header').forEach(function (header) {
-      header.addEventListener('click', function () {
-        header.closest('.group-card').classList.toggle('collapsed');
-      });
-    });
-
-    let toastTimer = null;
-    function showToast(message, isError) {
-      let toast = document.getElementById('copyToast');
-      if (!toast) {
-        toast = document.createElement('div');
-        toast.id = 'copyToast';
-        toast.className = 'floating-toast';
-        document.body.appendChild(toast);
-      }
-      toast.textContent = message;
-      toast.classList.toggle('error', Boolean(isError));
-      toast.classList.add('open');
-      clearTimeout(toastTimer);
-      toastTimer = setTimeout(function () { toast.classList.remove('open'); }, 2200);
-    }
-
-    document.querySelectorAll('.copy-group-btn').forEach(function (btn) {
-      btn.addEventListener('click', function (e) {
-        e.stopPropagation();
-        const rows = JSON.parse(btn.dataset.rows);
-        const header = ['Waktu', 'Nama', 'Jumlah', 'Total', 'Metode', 'Status'];
-        const tsv = [header].concat(rows).map(function (row) { return row.join('\t'); }).join('\n');
-        navigator.clipboard.writeText(tsv).then(function () {
-          btn.innerHTML = '<i data-lucide="check"></i>';
-          btn.classList.add('success');
-          if (window.lucide) lucide.createIcons();
-          setTimeout(function () {
-            btn.innerHTML = '<i data-lucide="clipboard-copy"></i>';
-            btn.classList.remove('success');
-            if (window.lucide) lucide.createIcons();
-          }, 1500);
-          showToast('Disalin — siap ditempel ke Excel');
-        }).catch(function () {
-          showToast('Gagal menyalin ke clipboard', true);
-        });
-      });
-    });
-
-    if ('IntersectionObserver' in window) {
-      document.querySelectorAll('.sticky-title').forEach(function (title) {
-        const sentinel = document.createElement('div');
-        title.parentNode.insertBefore(sentinel, title);
-        const observer = new IntersectionObserver(function (entries) {
-          title.classList.toggle('is-stuck', !entries[0].isIntersecting);
-        }, { threshold: 1 });
-        observer.observe(sentinel);
-      });
-    }
-
     const highlightId = new URLSearchParams(window.location.search).get('highlight');
-    if (highlightId) {
-      const row = document.getElementById('row-' + highlightId);
-      if (row) {
-        row.closest('.group-card') && row.closest('.group-card').classList.remove('collapsed');
-        row.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        row.classList.add('row-highlight');
-        setTimeout(function () { row.classList.remove('row-highlight'); }, 3000);
-      }
-      const url = new URL(window.location.href);
-      url.searchParams.delete('highlight');
-      window.history.replaceState({}, '', url);
+    if (!highlightId) return;
+    const row = document.getElementById('row-' + highlightId);
+    if (row) {
+      const card = row.closest('.group-card');
+      if (card) card.classList.remove('collapsed');
+      row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      row.classList.add('row-highlight');
+      setTimeout(function () { row.classList.remove('row-highlight'); }, 3000);
     }
+    const url = new URL(window.location.href);
+    url.searchParams.delete('highlight');
+    window.history.replaceState({}, '', url);
   })();
 </script>
 </body>
