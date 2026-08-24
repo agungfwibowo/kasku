@@ -1,0 +1,44 @@
+name: Deploy to Rumahweb
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install production dependencies
+        run: npm install --omit=dev --no-audit --no-fund
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Upload files via tar over SSH
+        run: |
+          tar czf - \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='data' \
+            --exclude='.env' \
+            --exclude='.env.*' \
+            . | ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "mkdir -p ${{ secrets.DEPLOY_PATH }} && tar xzf - -C ${{ secrets.DEPLOY_PATH }}"
+
+      - name: Restart app
+        run: |
+          ssh -p ${{ secrets.DEPLOY_PORT }} ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "mkdir -p ${{ secrets.DEPLOY_PATH }}/tmp && touch ${{ secrets.DEPLOY_PATH }}/tmp/restart.txt"
